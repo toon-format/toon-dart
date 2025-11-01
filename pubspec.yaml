@@ -3,7 +3,7 @@ description: Token-Oriented Object Notation (TOON) - a token-efficient JSON alte
 version: 0.1.0
 repository: https://github.com/toon-format/toon-dart
 homepage: https://toonformat.dev
-documentation: https://toonformat.dev
+documentation: https://github.com/toon-format/toon-dart#readme
 issue_tracker: https://github.com/toon-format/toon-dart/issues
 
 environment:
