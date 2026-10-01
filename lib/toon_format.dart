@@ -14,7 +14,6 @@ import 'src/decode/scanners.dart';
 import 'src/encode/encoders.dart';
 import 'src/encode/normalize.dart';
 import 'src/options.dart';
-import 'src/types.dart';
 
 /// Encodes a value to TOON format.
 ///

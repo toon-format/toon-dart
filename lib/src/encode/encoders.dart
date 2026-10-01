@@ -51,7 +51,7 @@ void encodeKeyValuePair(String key, JsonValue? value, LineWriter writer, Depth d
       writer.push(depth, '$encodedKey:');
     } else {
       writer.push(depth, '$encodedKey:');
-      encodeObject(value as JsonObject, writer, depth + 1, options);
+      encodeObject(value, writer, depth + 1, options);
     }
   }
 }
@@ -163,7 +163,7 @@ void encodeArrayOfObjectsAsTabular(
 List<String>? extractTabularHeader(List<JsonObject> rows) {
   if (rows.isEmpty) return null;
 
-  final firstRow = rows[0]!;
+  final firstRow = rows[0];
   final firstKeys = firstRow.keys.toList();
   if (firstKeys.isEmpty) return null;
 
@@ -210,7 +210,7 @@ void writeTabularRows(
 ) {
   for (final row in rows) {
     final values = header.map((key) => row[key]).toList();
-    final joinedValue = encodeAndJoinPrimitives(values as List<JsonPrimitive>, options.delimiter);
+    final joinedValue = encodeAndJoinPrimitives(values, options.delimiter);
     writer.push(depth, joinedValue);
   }
 }
@@ -244,7 +244,7 @@ void encodeObjectAsListItem(JsonObject obj, LineWriter writer, Depth depth, Reso
   }
 
   // First key-value on the same line as "- "
-  final firstKey = keys[0]!;
+  final firstKey = keys[0];
   final encodedKey = encodeKey(firstKey);
   final firstValue = obj[firstKey];
 
@@ -287,13 +287,13 @@ void encodeObjectAsListItem(JsonObject obj, LineWriter writer, Depth depth, Reso
       writer.pushListItem(depth, '$encodedKey:');
     } else {
       writer.pushListItem(depth, '$encodedKey:');
-      encodeObject(firstValue as JsonObject, writer, depth + 2, options);
+      encodeObject(firstValue, writer, depth + 2, options);
     }
   }
 
   // Remaining keys on indented lines
   for (int i = 1; i < keys.length; i++) {
-    final key = keys[i]!;
+    final key = keys[i];
     encodeKeyValuePair(key, obj[key], writer, depth + 1, options);
   }
 }
