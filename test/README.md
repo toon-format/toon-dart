@@ -1,35 +1,13 @@
-# TOON Format Conformance Tests
+# TOON Conformance Tests
 
-This directory contains conformance tests that validate the Dart implementation against the [TOON specification test fixtures](https://github.com/toon-format/spec/tree/main/tests).
+`conformance_test.dart` runs every case of the [toon-format/spec](https://github.com/toon-format/spec) fixtures, vendored in `fixtures/` from the tag in `fixtures/VERSION`. Cases in `known_failures.dart` must still fail; remove an entry once its case passes.
 
-## Important Note
-
-**⚠️ If new test cases are added to the TOON specification**, you must first update `test/download_fixtures.dart` to include the new fixture file names before running the download script. This ensures all test fixtures are properly downloaded and available for testing.
-
-## Setup
-
-Before running tests, download the test fixtures from the spec repository:
+To sync a later spec tag:
 
 ```bash
-dart run test/download_fixtures.dart
+TAG=v4.1.2
+rm -rf test/fixtures/encode test/fixtures/decode
+curl -sL "https://github.com/toon-format/spec/archive/refs/tags/$TAG.tar.gz" \
+  | tar -xz -C test/fixtures --strip-components=3 "spec-${TAG#v}/tests/fixtures"
+echo "$TAG" > test/fixtures/VERSION
 ```
-
-This will download all test fixtures to `test/fixtures/`.
-
-## Running Tests
-
-Run all conformance tests:
-
-```bash
-dart test test/conformance_test.dart
-```
-
-Or using fvm:
-
-```bash
-fvm dart test test/conformance_test.dart
-```
-
-## Test Coverage
-
-The conformance tests cover both encoding and decoding of TOON format, ensuring compliance with the specification across various scenarios.
