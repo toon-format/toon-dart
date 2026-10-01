@@ -8,7 +8,7 @@
 
 ## Status
 
-🚧 **This package is currently a namespace reservation.** Full implementation coming soon!
+`toon-spec: 1.4` – [`test/known_failures.dart`](./test/known_failures.dart) lists the [v4.1](https://github.com/toon-format/spec/blob/main/SPEC.md) fixture cases this package doesn't pass yet. The `0.1.0` release on pub.dev is a namespace placeholder; this implementation isn't published yet.
 
 ### Example
 
@@ -36,9 +36,7 @@ users[2]{id,name,role}:
 - [Benchmarks & Performance](https://github.com/johannschopplich/toon#benchmarks)
 - [Other Language Implementations](https://github.com/johannschopplich/toon#other-implementations)
 
-## Future Usage
-
-Once implemented, the package will provide:
+## Usage
 
 ```dart
 import 'package:toon_format/toon_format.dart';
@@ -58,7 +56,7 @@ void main() {
 
 ## Contributing
 
-Interested in implementing TOON for Dart? Check out the [specification](https://github.com/johannschopplich/toon/blob/main/SPEC.md) and feel free to contribute!
+See [CONTRIBUTING.md](./CONTRIBUTING.md) and [`test/README.md`](./test/README.md).
 
 ## Contributors
 

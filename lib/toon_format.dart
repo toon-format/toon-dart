@@ -3,8 +3,7 @@
 /// TOON is a compact, human-readable format designed for passing structured
 /// data to Large Language Models with significantly reduced token usage.
 ///
-/// This package is currently under development.
-/// For specification, see: https://github.com/johannschopplich/toon/blob/main/SPEC.md
+/// For the specification, see https://github.com/toon-format/spec/blob/main/SPEC.md
 library toon_format;
 
 export 'src/options.dart';
