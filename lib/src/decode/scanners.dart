@@ -49,21 +49,6 @@ class LineCursor {
   }
 
   int get length => _lines.length;
-
-  ParsedLine? peekAtDepth(Depth targetDepth) {
-    final line = peek();
-    if (line == null || line.depth < targetDepth) {
-      return null;
-    }
-    if (line.depth == targetDepth) {
-      return line;
-    }
-    return null;
-  }
-
-  bool hasMoreAtDepth(Depth targetDepth) {
-    return peekAtDepth(targetDepth) != null;
-  }
 }
 
 /// Converts source string to parsed lines.

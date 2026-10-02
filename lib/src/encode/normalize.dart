@@ -91,15 +91,6 @@ bool isJsonObject(Object? value) {
   return value != null && value is Map<String, Object?>;
 }
 
-/// Checks if a value is a plain object.
-bool isPlainObject(Object? value) {
-  if (value == null || value is! Map) {
-    return false;
-  }
-  // In Dart, we check if it's a Map with string keys
-  return value is Map<String, Object?>;
-}
-
 // #endregion
 
 // #region Array type detection
