@@ -65,30 +65,6 @@ class ArrayHeaderInfo {
   });
 }
 
-/// Resolved encode options.
-class ResolvedEncodeOptions {
-  final int indent;
-  final Delimiter delimiter;
-  final String? lengthMarker;
-
-  const ResolvedEncodeOptions({
-    required this.indent,
-    required this.delimiter,
-    this.lengthMarker,
-  });
-}
-
-/// Resolved decode options.
-class ResolvedDecodeOptions {
-  final int indent;
-  final bool strict;
-
-  const ResolvedDecodeOptions({
-    required this.indent,
-    required this.strict,
-  });
-}
-
 /// Result of parsing an array header line.
 class ArrayHeaderParseResult {
   final ArrayHeaderInfo header;

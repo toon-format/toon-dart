@@ -1,3 +1,4 @@
+import '../options.dart';
 import '../types.dart';
 import '../utilities/constants.dart';
 import 'scanners.dart';
@@ -13,7 +14,7 @@ void assertExpectedCount(
   int actual,
   int expected,
   String itemType,
-  ResolvedDecodeOptions options,
+  DecodeOptions options,
 ) {
   if (options.strict && actual != expected) {
     throw RangeError('Expected $expected $itemType, but got $actual');

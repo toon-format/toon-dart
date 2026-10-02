@@ -1,3 +1,4 @@
+import '../options.dart';
 import '../types.dart';
 import '../utilities/constants.dart';
 import '../utilities/string-utils.dart';
@@ -8,7 +9,7 @@ import 'validation.dart';
 // #region Entry decoding
 
 /// Decodes a value from lines.
-JsonValue decodeValueFromLines(LineCursor cursor, ResolvedDecodeOptions options) {
+JsonValue decodeValueFromLines(LineCursor cursor, DecodeOptions options) {
   final first = cursor.peek();
   if (first == null) {
     return <String, JsonValue>{};
@@ -55,7 +56,7 @@ bool isKeyValueLine(ParsedLine line) {
 // #region Object decoding
 
 /// Decodes an object from lines.
-JsonObject decodeObject(LineCursor cursor, Depth baseDepth, ResolvedDecodeOptions options) {
+JsonObject decodeObject(LineCursor cursor, Depth baseDepth, DecodeOptions options) {
   final obj = <String, JsonValue>{};
 
   // Detect the actual depth of the first field (may differ from baseDepth in nested structures)
@@ -88,7 +89,7 @@ KeyValueResult decodeKeyValue(
   String content,
   LineCursor cursor,
   Depth baseDepth,
-  ResolvedDecodeOptions options,
+  DecodeOptions options,
 ) {
   // Check for array header first (before parsing key)
   final arrayHeader = parseArrayHeaderLine(content, DEFAULT_DELIMITER);
@@ -127,7 +128,7 @@ KeyValuePairResult decodeKeyValuePair(
   ParsedLine line,
   LineCursor cursor,
   Depth baseDepth,
-  ResolvedDecodeOptions options,
+  DecodeOptions options,
 ) {
   cursor.advance();
   final result = decodeKeyValue(line.content, cursor, baseDepth, options);
@@ -144,7 +145,7 @@ JsonArray decodeArrayFromHeader(
   String? inlineValues,
   LineCursor cursor,
   Depth baseDepth,
-  ResolvedDecodeOptions options,
+  DecodeOptions options,
 ) {
   // Inline primitive array
   if (inlineValues != null) {
@@ -168,7 +169,7 @@ JsonArray decodeArrayFromHeader(
 List<JsonPrimitive> decodeInlinePrimitiveArray(
   ArrayHeaderInfo header,
   String inlineValues,
-  ResolvedDecodeOptions options,
+  DecodeOptions options,
 ) {
   if (inlineValues.trim().isEmpty) {
     assertExpectedCount(0, header.length, 'inline array items', options);
@@ -188,7 +189,7 @@ List<JsonValue> decodeListArray(
   ArrayHeaderInfo header,
   LineCursor cursor,
   Depth baseDepth,
-  ResolvedDecodeOptions options,
+  DecodeOptions options,
 ) {
   final items = <JsonValue>[];
   final itemDepth = baseDepth + 1;
@@ -252,7 +253,7 @@ List<JsonObject> decodeTabularArray(
   ArrayHeaderInfo header,
   LineCursor cursor,
   Depth baseDepth,
-  ResolvedDecodeOptions options,
+  DecodeOptions options,
 ) {
   final objects = <JsonObject>[];
   final rowDepth = baseDepth + 1;
@@ -318,7 +319,7 @@ List<JsonObject> decodeTabularArray(
 JsonValue decodeListItem(
   LineCursor cursor,
   Depth baseDepth,
-  ResolvedDecodeOptions options,
+  DecodeOptions options,
 ) {
   final line = cursor.next();
   if (line == null) {
@@ -364,7 +365,7 @@ JsonObject decodeObjectFromListItem(
   ParsedLine firstLine,
   LineCursor cursor,
   Depth baseDepth,
-  ResolvedDecodeOptions options,
+  DecodeOptions options,
 ) {
   final afterHyphen = firstLine.content.substring(LIST_ITEM_PREFIX.length);
   final result = decodeKeyValue(afterHyphen, cursor, baseDepth, options);

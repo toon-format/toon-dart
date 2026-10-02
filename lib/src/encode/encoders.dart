@@ -1,3 +1,4 @@
+import '../options.dart';
 import '../types.dart';
 import '../utilities/constants.dart';
 import 'normalize.dart';
@@ -7,7 +8,7 @@ import 'writer.dart';
 // #region Encode normalized JsonValue
 
 /// Encodes a JsonValue to TOON format.
-String encodeValue(JsonValue value, ResolvedEncodeOptions options) {
+String encodeValue(JsonValue value, EncodeOptions options) {
   if (isJsonPrimitive(value)) {
     return encodePrimitive(value, options.delimiter);
   }
@@ -28,7 +29,7 @@ String encodeValue(JsonValue value, ResolvedEncodeOptions options) {
 // #region Object encoding
 
 /// Encodes a JSON object.
-void encodeObject(JsonObject value, LineWriter writer, Depth depth, ResolvedEncodeOptions options) {
+void encodeObject(JsonObject value, LineWriter writer, Depth depth, EncodeOptions options) {
   final keys = value.keys.toList();
 
   for (final key in keys) {
@@ -37,7 +38,7 @@ void encodeObject(JsonObject value, LineWriter writer, Depth depth, ResolvedEnco
 }
 
 /// Encodes a key-value pair.
-void encodeKeyValuePair(String key, JsonValue? value, LineWriter writer, Depth depth, ResolvedEncodeOptions options) {
+void encodeKeyValuePair(String key, JsonValue? value, LineWriter writer, Depth depth, EncodeOptions options) {
   final encodedKey = encodeKey(key);
 
   if (isJsonPrimitive(value)) {
@@ -66,7 +67,7 @@ void encodeArray(
   JsonArray value,
   LineWriter writer,
   Depth depth,
-  ResolvedEncodeOptions options,
+  EncodeOptions options,
 ) {
   if (value.isEmpty) {
     final header = formatHeader(0, key: key, delimiter: options.delimiter, lengthMarker: options.lengthMarker);
@@ -116,7 +117,7 @@ void encodeArrayOfArraysAsListItems(
   List<JsonArray> values,
   LineWriter writer,
   Depth depth,
-  ResolvedEncodeOptions options,
+  EncodeOptions options,
 ) {
   final header = formatHeader(values.length, key: prefix, delimiter: options.delimiter, lengthMarker: options.lengthMarker);
   writer.push(depth, header);
@@ -151,7 +152,7 @@ void encodeArrayOfObjectsAsTabular(
   List<String> header,
   LineWriter writer,
   Depth depth,
-  ResolvedEncodeOptions options,
+  EncodeOptions options,
 ) {
   final formattedHeader = formatHeader(rows.length, key: prefix, fields: header, delimiter: options.delimiter, lengthMarker: options.lengthMarker);
   writer.push(depth, formattedHeader);
@@ -206,7 +207,7 @@ void writeTabularRows(
   List<String> header,
   LineWriter writer,
   Depth depth,
-  ResolvedEncodeOptions options,
+  EncodeOptions options,
 ) {
   for (final row in rows) {
     final values = header.map((key) => row[key]).toList();
@@ -225,7 +226,7 @@ void encodeMixedArrayAsListItems(
   List<JsonValue> items,
   LineWriter writer,
   Depth depth,
-  ResolvedEncodeOptions options,
+  EncodeOptions options,
 ) {
   final header = formatHeader(items.length, key: prefix, delimiter: options.delimiter, lengthMarker: options.lengthMarker);
   writer.push(depth, header);
@@ -236,7 +237,7 @@ void encodeMixedArrayAsListItems(
 }
 
 /// Encodes an object as a list item.
-void encodeObjectAsListItem(JsonObject obj, LineWriter writer, Depth depth, ResolvedEncodeOptions options) {
+void encodeObjectAsListItem(JsonObject obj, LineWriter writer, Depth depth, EncodeOptions options) {
   final keys = obj.keys.toList();
   if (keys.isEmpty) {
     writer.push(depth, LIST_ITEM_MARKER);
@@ -307,7 +308,7 @@ void encodeListItemValue(
   JsonValue value,
   LineWriter writer,
   Depth depth,
-  ResolvedEncodeOptions options,
+  EncodeOptions options,
 ) {
   if (isJsonPrimitive(value)) {
     writer.pushListItem(depth, encodePrimitive(value, options.delimiter));

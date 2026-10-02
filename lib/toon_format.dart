@@ -21,8 +21,7 @@ import 'src/options.dart';
 /// Returns a TOON-formatted string
 String encode(Object? value, {EncodeOptions? options}) {
   final normalized = normalizeValue(value);
-  final resolvedOptions = (options ?? const EncodeOptions()).resolve();
-  return encodeValue(normalized, resolvedOptions);
+  return encodeValue(normalized, options ?? const EncodeOptions());
 }
 
 /// Decodes a TOON-formatted string to a Dart value.
@@ -31,8 +30,8 @@ String encode(Object? value, {EncodeOptions? options}) {
 /// [options] Optional decoding options
 /// Returns a Dart value (Map, List, or primitive) representing the parsed TOON data
 Object? decode(String input, {DecodeOptions? options}) {
-  final resolvedOptions = (options ?? const DecodeOptions()).resolve();
-  final scanResult = toParsedLines(input, resolvedOptions.indent, resolvedOptions.strict);
+  options ??= const DecodeOptions();
+  final scanResult = toParsedLines(input, options.indent, options.strict);
   final cursor = LineCursor(scanResult.lines, scanResult.blankLines);
-  return decodeValueFromLines(cursor, resolvedOptions);
+  return decodeValueFromLines(cursor, options);
 }

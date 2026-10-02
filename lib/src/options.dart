@@ -1,5 +1,3 @@
-import 'types.dart';
-
 /// Options for encoding to TOON format.
 class EncodeOptions {
   /// Number of spaces per indentation level (default: 2).
@@ -17,15 +15,6 @@ class EncodeOptions {
     this.delimiter = ',',
     this.lengthMarker,
   }) : assert(indent > 0, 'indent must be positive');
-
-  /// Resolves encode options with defaults.
-  ResolvedEncodeOptions resolve() {
-    return ResolvedEncodeOptions(
-      indent: indent,
-      delimiter: delimiter,
-      lengthMarker: lengthMarker,
-    );
-  }
 }
 
 /// Options for decoding from TOON format.
@@ -40,12 +29,4 @@ class DecodeOptions {
     this.indent = 2,
     this.strict = true,
   }) : assert(indent > 0, 'indent must be positive');
-
-  /// Resolves decode options with defaults.
-  ResolvedDecodeOptions resolve() {
-    return ResolvedDecodeOptions(
-      indent: indent,
-      strict: strict,
-    );
-  }
 }
