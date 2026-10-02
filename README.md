@@ -56,7 +56,7 @@ Targets [TOON spec v1.4](https://github.com/toon-format/spec/blob/v1.4.0/SPEC.md
 - **Specification:** [SPEC.md](https://github.com/toon-format/spec/blob/main/SPEC.md) – Normative rules and conformance checklists
 - **Format Overview:** [toonformat.dev](https://toonformat.dev/guide/format-overview) – Every form with examples
 - **Other Implementations:** [toonformat.dev](https://toonformat.dev/ecosystem/implementations) – TOON in other languages
-- **Examples:** [example/](./example/) – Encode and decode samples
+- **Example:** [example/example.dart](./example/example.dart) – The usage snippet as a runnable file
 
 ## Contributing
 
