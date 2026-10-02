@@ -35,7 +35,7 @@ void validateNoExtraListItems(
   if (cursor.atEnd()) return;
 
   final nextLine = cursor.peek();
-  if (nextLine != null && nextLine.depth == itemDepth && nextLine.content.startsWith(LIST_ITEM_PREFIX)) {
+  if (nextLine != null && nextLine.depth == itemDepth && nextLine.content.startsWith(listItemPrefix)) {
     throw RangeError('Expected $expectedCount list array items, but found more');
   }
 }
@@ -56,7 +56,7 @@ void validateNoExtraTabularRows(
   final nextLine = cursor.peek();
   if (nextLine != null &&
       nextLine.depth == rowDepth &&
-      !nextLine.content.startsWith(LIST_ITEM_PREFIX) &&
+      !nextLine.content.startsWith(listItemPrefix) &&
       isDataRow(nextLine.content, header.delimiter)) {
     throw RangeError('Expected ${header.length} tabular rows, but found more');
   }
@@ -101,7 +101,7 @@ void validateNoBlankLinesInRange(
 /// [delimiter] The delimiter used in the table
 /// Returns true if the line is a data row, false if it's a key-value pair
 bool isDataRow(String content, String delimiter) {
-  final colonPos = content.indexOf(COLON);
+  final colonPos = content.indexOf(colon);
   final delimiterPos = content.indexOf(delimiter);
 
   // No colon = definitely a data row

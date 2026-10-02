@@ -8,7 +8,7 @@ import '../utilities/validation.dart';
 /// Encodes a primitive value to a string.
 String encodePrimitive(JsonPrimitive value, [String? delimiter]) {
   if (value == null) {
-    return NULL_LITERAL;
+    return nullLiteral;
   }
 
   if (value is bool) {
@@ -22,16 +22,16 @@ String encodePrimitive(JsonPrimitive value, [String? delimiter]) {
     return value.toString();
   }
 
-  return encodeStringLiteral(value as String, delimiter ?? COMMA);
+  return encodeStringLiteral(value as String, delimiter ?? comma);
 }
 
 /// Encodes a string literal, adding quotes if necessary.
-String encodeStringLiteral(String value, [String delimiter = COMMA]) {
+String encodeStringLiteral(String value, [String delimiter = comma]) {
   if (isSafeUnquoted(value, delimiter)) {
     return value;
   }
 
-  return '$DOUBLE_QUOTE${escapeString(value)}$DOUBLE_QUOTE';
+  return '$doubleQuote${escapeString(value)}$doubleQuote';
 }
 
 // #endregion
@@ -44,7 +44,7 @@ String encodeKey(String key) {
     return key;
   }
 
-  return '$DOUBLE_QUOTE${escapeString(key)}$DOUBLE_QUOTE';
+  return '$doubleQuote${escapeString(key)}$doubleQuote';
 }
 
 // #endregion
@@ -53,7 +53,7 @@ String encodeKey(String key) {
 
 /// Encodes and joins primitive values with a delimiter.
 String encodeAndJoinPrimitives(List<JsonPrimitive> values,
-    [String delimiter = COMMA]) {
+    [String delimiter = comma]) {
   return values.map((v) => encodePrimitive(v, delimiter)).join(delimiter);
 }
 
@@ -68,7 +68,7 @@ String formatHeader(
   List<String>? fields,
   String? delimiter,
 }) {
-  final delimiterValue = delimiter ?? COMMA;
+  final delimiterValue = delimiter ?? comma;
 
   String header = '';
 
@@ -78,7 +78,7 @@ String formatHeader(
 
   // Only include delimiter if it's not the default (comma)
   final delimiterSuffix =
-      delimiterValue != DEFAULT_DELIMITER ? delimiterValue : '';
+      delimiterValue != defaultDelimiter ? delimiterValue : '';
   header += '[$length$delimiterSuffix]';
 
   if (fields != null) {

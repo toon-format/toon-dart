@@ -20,7 +20,7 @@ bool isValidUnquotedKey(String key) {
 /// - Contains control characters (newlines, tabs, etc.)
 /// - Contains the active delimiter
 /// - Starts with a list marker (hyphen)
-bool isSafeUnquoted(String value, [String delimiter = COMMA]) {
+bool isSafeUnquoted(String value, [String delimiter = comma]) {
   if (value.isEmpty) {
     return false;
   }
@@ -60,7 +60,7 @@ bool isSafeUnquoted(String value, [String delimiter = COMMA]) {
   }
 
   // Check for hyphen at start (list marker)
-  if (value.startsWith(LIST_ITEM_MARKER)) {
+  if (value.startsWith(listItemMarker)) {
     return false;
   }
 

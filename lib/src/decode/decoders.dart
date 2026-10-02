@@ -17,7 +17,7 @@ JsonValue decodeValueFromLines(LineCursor cursor, DecodeOptions options) {
 
   // Check for root array
   if (isArrayHeaderAfterHyphen(first.content)) {
-    final headerInfo = parseArrayHeaderLine(first.content, DEFAULT_DELIMITER);
+    final headerInfo = parseArrayHeaderLine(first.content, defaultDelimiter);
     if (headerInfo != null) {
       cursor.advance(); // Move past the header line
       return decodeArrayFromHeader(headerInfo.header, headerInfo.inlineValues, cursor, 0, options);
@@ -44,10 +44,10 @@ bool isKeyValueLine(ParsedLine line) {
       return false;
     }
     // Check if colon exists after quoted key (may have array/brace syntax between)
-    return content.substring(closingQuoteIndex + 1).contains(COLON);
+    return content.substring(closingQuoteIndex + 1).contains(colon);
   } else {
     // Unquoted key - look for first colon not inside quotes
-    return content.contains(COLON);
+    return content.contains(colon);
   }
 }
 
@@ -92,7 +92,7 @@ KeyValueResult decodeKeyValue(
   DecodeOptions options,
 ) {
   // Check for array header first (before parsing key)
-  final arrayHeader = parseArrayHeaderLine(content, DEFAULT_DELIMITER);
+  final arrayHeader = parseArrayHeaderLine(content, defaultDelimiter);
   if (arrayHeader != null && arrayHeader.header.key != null) {
     final value = decodeArrayFromHeader(arrayHeader.header, arrayHeader.inlineValues, cursor, baseDepth, options);
     // After an array, subsequent fields are at baseDepth + 1 (where array content is)
@@ -205,7 +205,7 @@ List<JsonValue> decodeListArray(
     }
 
     // Check for list item (with or without space after hyphen)
-    final isListItem = line.content.startsWith(LIST_ITEM_PREFIX) || line.content == '-';
+    final isListItem = line.content.startsWith(listItemPrefix) || line.content == '-';
 
     if (line.depth == itemDepth && isListItem) {
       // Track first and last item line numbers
@@ -332,10 +332,10 @@ JsonValue decodeListItem(
   // Empty list item should be an empty object
   if (line.content == '-') {
     return <String, JsonValue>{};
-  } else if (line.content.startsWith(LIST_ITEM_PREFIX)) {
-    afterHyphen = line.content.substring(LIST_ITEM_PREFIX.length);
+  } else if (line.content.startsWith(listItemPrefix)) {
+    afterHyphen = line.content.substring(listItemPrefix.length);
   } else {
-    throw FormatException('Expected list item to start with "$LIST_ITEM_PREFIX"');
+    throw FormatException('Expected list item to start with "$listItemPrefix"');
   }
 
   // Empty content after list item should also be an empty object
@@ -345,7 +345,7 @@ JsonValue decodeListItem(
 
   // Check for array header after hyphen
   if (isArrayHeaderAfterHyphen(afterHyphen)) {
-    final arrayHeader = parseArrayHeaderLine(afterHyphen, DEFAULT_DELIMITER);
+    final arrayHeader = parseArrayHeaderLine(afterHyphen, defaultDelimiter);
     if (arrayHeader != null) {
       return decodeArrayFromHeader(arrayHeader.header, arrayHeader.inlineValues, cursor, baseDepth, options);
     }
@@ -367,7 +367,7 @@ JsonObject decodeObjectFromListItem(
   Depth baseDepth,
   DecodeOptions options,
 ) {
-  final afterHyphen = firstLine.content.substring(LIST_ITEM_PREFIX.length);
+  final afterHyphen = firstLine.content.substring(listItemPrefix.length);
   final result = decodeKeyValue(afterHyphen, cursor, baseDepth, options);
 
   final obj = <String, JsonValue>{result.key: result.value};
@@ -379,7 +379,7 @@ JsonObject decodeObjectFromListItem(
       break;
     }
 
-    if (line.depth == result.followDepth && !line.content.startsWith(LIST_ITEM_PREFIX)) {
+    if (line.depth == result.followDepth && !line.content.startsWith(listItemPrefix)) {
       final pair = decodeKeyValuePair(line, cursor, result.followDepth, options);
       obj[pair.key] = pair.value;
     } else {

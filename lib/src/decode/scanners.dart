@@ -80,7 +80,7 @@ ScanResult toParsedLines(String source, int indentSize, bool strict) {
     final raw = lines[i];
     final lineNumber = i + 1;
     int indent = 0;
-    while (indent < raw.length && raw[indent] == SPACE) {
+    while (indent < raw.length && raw[indent] == space) {
       indent++;
     }
 
@@ -99,12 +99,12 @@ ScanResult toParsedLines(String source, int indentSize, bool strict) {
     if (strict) {
       // Find the full leading whitespace region (spaces and tabs)
       int wsEnd = 0;
-      while (wsEnd < raw.length && (raw[wsEnd] == SPACE || raw[wsEnd] == TAB)) {
+      while (wsEnd < raw.length && (raw[wsEnd] == space || raw[wsEnd] == tab)) {
         wsEnd++;
       }
 
       // Check for tabs in leading whitespace (before actual content)
-      if (raw.substring(0, wsEnd).contains(TAB)) {
+      if (raw.substring(0, wsEnd).contains(tab)) {
         throw FormatException('Line $lineNumber: Tabs are not allowed in indentation in strict mode');
       }
 

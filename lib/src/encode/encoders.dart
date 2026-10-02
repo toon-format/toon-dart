@@ -240,7 +240,7 @@ void encodeMixedArrayAsListItems(
 void encodeObjectAsListItem(JsonObject obj, LineWriter writer, Depth depth, EncodeOptions options) {
   final keys = obj.keys.toList();
   if (keys.isEmpty) {
-    writer.push(depth, LIST_ITEM_MARKER);
+    writer.push(depth, listItemMarker);
     return;
   }
 

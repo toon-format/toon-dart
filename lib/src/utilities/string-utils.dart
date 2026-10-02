@@ -5,11 +5,11 @@ import '../utilities/constants.dart';
 /// Handles backslashes, quotes, newlines, carriage returns, and tabs.
 String escapeString(String value) {
   return value
-      .replaceAll(BACKSLASH, '$BACKSLASH$BACKSLASH')
-      .replaceAll(DOUBLE_QUOTE, '$BACKSLASH$DOUBLE_QUOTE')
-      .replaceAll(NEWLINE, '${BACKSLASH}n')
-      .replaceAll(CARRIAGE_RETURN, '${BACKSLASH}r')
-      .replaceAll(TAB, '${BACKSLASH}t');
+      .replaceAll(backslash, '$backslash$backslash')
+      .replaceAll(doubleQuote, '$backslash$doubleQuote')
+      .replaceAll(newline, '${backslash}n')
+      .replaceAll(carriageReturn, '${backslash}r')
+      .replaceAll(tab, '${backslash}t');
 }
 
 /// Unescapes a string by processing escape sequences.
@@ -20,34 +20,34 @@ String unescapeString(String value) {
   int i = 0;
 
   while (i < value.length) {
-    if (value[i] == BACKSLASH) {
+    if (value[i] == backslash) {
       if (i + 1 >= value.length) {
         throw FormatException('Invalid escape sequence: backslash at end of string');
       }
 
       final next = value[i + 1];
       if (next == 'n') {
-        result.write(NEWLINE);
+        result.write(newline);
         i += 2;
         continue;
       }
       if (next == 't') {
-        result.write(TAB);
+        result.write(tab);
         i += 2;
         continue;
       }
       if (next == 'r') {
-        result.write(CARRIAGE_RETURN);
+        result.write(carriageReturn);
         i += 2;
         continue;
       }
-      if (next == BACKSLASH) {
-        result.write(BACKSLASH);
+      if (next == backslash) {
+        result.write(backslash);
         i += 2;
         continue;
       }
-      if (next == DOUBLE_QUOTE) {
-        result.write(DOUBLE_QUOTE);
+      if (next == doubleQuote) {
+        result.write(doubleQuote);
         i += 2;
         continue;
       }
@@ -70,12 +70,12 @@ String unescapeString(String value) {
 int findClosingQuote(String content, int start) {
   int i = start + 1;
   while (i < content.length) {
-    if (content[i] == BACKSLASH && i + 1 < content.length) {
+    if (content[i] == backslash && i + 1 < content.length) {
       // Skip escaped character
       i += 2;
       continue;
     }
-    if (content[i] == DOUBLE_QUOTE) {
+    if (content[i] == doubleQuote) {
       return i;
     }
     i++;
@@ -94,13 +94,13 @@ int findUnquotedChar(String content, String char, [int start = 0]) {
   int i = start;
 
   while (i < content.length) {
-    if (content[i] == BACKSLASH && i + 1 < content.length && inQuotes) {
+    if (content[i] == backslash && i + 1 < content.length && inQuotes) {
       // Skip escaped character
       i += 2;
       continue;
     }
 
-    if (content[i] == DOUBLE_QUOTE) {
+    if (content[i] == doubleQuote) {
       inQuotes = !inQuotes;
       i++;
       continue;

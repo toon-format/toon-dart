@@ -18,7 +18,7 @@ class LineWriter {
   }
 
   void pushListItem(Depth depth, String content) {
-    push(depth, '$LIST_ITEM_PREFIX$content');
+    push(depth, '$listItemPrefix$content');
   }
 
   @override
