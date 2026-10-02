@@ -2,7 +2,6 @@ import '../types.dart';
 import '../utilities/constants.dart';
 import '../utilities/string-utils.dart';
 import '../utilities/validation.dart';
-import '../utilities/int64_bounds_import.dart';
 
 // #region Primitive encoding
 
@@ -16,30 +15,10 @@ String encodePrimitive(JsonPrimitive value, [String? delimiter]) {
     return value.toString();
   }
 
+  if (value is double && value == value.truncateToDouble()) {
+    return value.toStringAsFixed(0);
+  }
   if (value is num) {
-    // Format integers without decimal point, even if stored as double
-    if (value is int) {
-      return value.toString();
-    } else if (value is double) {
-      // Check if it's actually an integer value
-      if (value == value.truncateToDouble() && value.isFinite) {
-        // It's a whole number
-        // Check if it fits in int range
-        if (isInInt64Range(value)) {
-          // Safe to convert to int
-          return value.toInt().toString();
-        } else {
-          // Too large for int, but it's a whole number
-          // Format without decimal point (e.g., 1e20 becomes "100000000000000000000")
-          // Use toString() which will format large numbers in scientific notation,
-          // then convert to fixed notation if it's a whole number
-          final str = value.toStringAsFixed(0);
-          return str;
-        }
-      }
-      // It's a real decimal, format normally
-      return value.toString();
-    }
     return value.toString();
   }
 
