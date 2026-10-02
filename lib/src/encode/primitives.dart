@@ -67,10 +67,8 @@ String formatHeader(
   String? key,
   List<String>? fields,
   String? delimiter,
-  String? lengthMarker,
 }) {
   final delimiterValue = delimiter ?? COMMA;
-  final lengthMarkerValue = lengthMarker ?? '';
 
   String header = '';
 
@@ -81,7 +79,7 @@ String formatHeader(
   // Only include delimiter if it's not the default (comma)
   final delimiterSuffix =
       delimiterValue != DEFAULT_DELIMITER ? delimiterValue : '';
-  header += '[$lengthMarkerValue$length$delimiterSuffix]';
+  header += '[$length$delimiterSuffix]';
 
   if (fields != null) {
     final quotedFields = fields.map((f) => encodeKey(f)).toList();

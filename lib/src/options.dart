@@ -6,14 +6,9 @@ class EncodeOptions {
   /// Delimiter for array values and tabular rows (default: ',').
   final String delimiter;
 
-  /// Optional marker to prefix array lengths (default: null).
-  /// Set to '#' to enable length marker.
-  final String? lengthMarker;
-
   const EncodeOptions({
     this.indent = 2,
     this.delimiter = ',',
-    this.lengthMarker,
   }) : assert(indent > 0, 'indent must be positive');
 }
 

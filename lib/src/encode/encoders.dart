@@ -70,14 +70,14 @@ void encodeArray(
   EncodeOptions options,
 ) {
   if (value.isEmpty) {
-    final header = formatHeader(0, key: key, delimiter: options.delimiter, lengthMarker: options.lengthMarker);
+    final header = formatHeader(0, key: key, delimiter: options.delimiter);
     writer.push(depth, header);
     return;
   }
 
   // Primitive array
   if (isArrayOfPrimitives(value)) {
-    final formatted = encodeInlineArrayLine(value, options.delimiter, key, options.lengthMarker);
+    final formatted = encodeInlineArrayLine(value, options.delimiter, key);
     writer.push(depth, formatted);
     return;
   }
@@ -119,20 +119,20 @@ void encodeArrayOfArraysAsListItems(
   Depth depth,
   EncodeOptions options,
 ) {
-  final header = formatHeader(values.length, key: prefix, delimiter: options.delimiter, lengthMarker: options.lengthMarker);
+  final header = formatHeader(values.length, key: prefix, delimiter: options.delimiter);
   writer.push(depth, header);
 
   for (final arr in values) {
     if (isArrayOfPrimitives(arr)) {
-      final inline = encodeInlineArrayLine(arr, options.delimiter, null, options.lengthMarker);
+      final inline = encodeInlineArrayLine(arr, options.delimiter, null);
       writer.pushListItem(depth + 1, inline);
     }
   }
 }
 
 /// Encodes an inline array line.
-String encodeInlineArrayLine(List<JsonPrimitive> values, String delimiter, String? prefix, String? lengthMarker) {
-  final header = formatHeader(values.length, key: prefix, delimiter: delimiter, lengthMarker: lengthMarker);
+String encodeInlineArrayLine(List<JsonPrimitive> values, String delimiter, String? prefix) {
+  final header = formatHeader(values.length, key: prefix, delimiter: delimiter);
   final joinedValue = encodeAndJoinPrimitives(values, delimiter);
   // Only add space if there are values
   if (values.isEmpty) {
@@ -154,7 +154,7 @@ void encodeArrayOfObjectsAsTabular(
   Depth depth,
   EncodeOptions options,
 ) {
-  final formattedHeader = formatHeader(rows.length, key: prefix, fields: header, delimiter: options.delimiter, lengthMarker: options.lengthMarker);
+  final formattedHeader = formatHeader(rows.length, key: prefix, fields: header, delimiter: options.delimiter);
   writer.push(depth, formattedHeader);
 
   writeTabularRows(rows, header, writer, depth + 1, options);
@@ -228,7 +228,7 @@ void encodeMixedArrayAsListItems(
   Depth depth,
   EncodeOptions options,
 ) {
-  final header = formatHeader(items.length, key: prefix, delimiter: options.delimiter, lengthMarker: options.lengthMarker);
+  final header = formatHeader(items.length, key: prefix, delimiter: options.delimiter);
   writer.push(depth, header);
 
   for (final item in items) {
@@ -255,7 +255,7 @@ void encodeObjectAsListItem(JsonObject obj, LineWriter writer, Depth depth, Enco
     final arr = firstValue as JsonArray;
     if (isArrayOfPrimitives(arr)) {
       // Inline format for primitive arrays
-      final formatted = encodeInlineArrayLine(arr, options.delimiter, firstKey, options.lengthMarker);
+      final formatted = encodeInlineArrayLine(arr, options.delimiter, firstKey);
       writer.pushListItem(depth, formatted);
     } else if (isArrayOfObjects(arr)) {
       // Check if array of objects can use tabular format
@@ -263,7 +263,7 @@ void encodeObjectAsListItem(JsonObject obj, LineWriter writer, Depth depth, Enco
       final header = extractTabularHeader(objects);
       if (header != null) {
         // Tabular format for uniform arrays of objects
-        final formattedHeader = formatHeader(arr.length, key: firstKey, fields: header, delimiter: options.delimiter, lengthMarker: options.lengthMarker);
+        final formattedHeader = formatHeader(arr.length, key: firstKey, fields: header, delimiter: options.delimiter);
         writer.pushListItem(depth, formattedHeader);
         writeTabularRows(objects, header, writer, depth + 1, options);
       } else {
@@ -315,7 +315,7 @@ void encodeListItemValue(
   } else if (isJsonArray(value)) {
     final arr = value as JsonArray;
     if (isArrayOfPrimitives(arr)) {
-      final inline = encodeInlineArrayLine(arr, options.delimiter, null, options.lengthMarker);
+      final inline = encodeInlineArrayLine(arr, options.delimiter, null);
       writer.pushListItem(depth, inline);
     }
   } else if (isJsonObject(value)) {

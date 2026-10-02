@@ -54,14 +54,12 @@ class ArrayHeaderInfo {
   final int length;
   final Delimiter delimiter;
   final List<String>? fields;
-  final bool hasLengthMarker;
 
   const ArrayHeaderInfo({
     this.key,
     required this.length,
     required this.delimiter,
     this.fields,
-    required this.hasLengthMarker,
   });
 }
 
@@ -80,12 +78,10 @@ class ArrayHeaderParseResult {
 class BracketSegmentResult {
   final int length;
   final String delimiter;
-  final bool hasLengthMarker;
 
   const BracketSegmentResult({
     required this.length,
     required this.delimiter,
-    required this.hasLengthMarker,
   });
 }
 

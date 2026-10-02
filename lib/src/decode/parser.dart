@@ -85,7 +85,6 @@ ArrayHeaderParseResult? parseArrayHeaderLine(
 
   final length = parsedBracket.length;
   final delimiter = parsedBracket.delimiter;
-  final hasLengthMarker = parsedBracket.hasLengthMarker;
 
   // Check for fields segment
   List<String>? fields;
@@ -105,7 +104,6 @@ ArrayHeaderParseResult? parseArrayHeaderLine(
       length: length,
       delimiter: delimiter,
       fields: fields,
-      hasLengthMarker: hasLengthMarker,
     ),
     inlineValues: afterColon.isEmpty ? null : afterColon,
   );
@@ -116,14 +114,7 @@ BracketSegmentResult parseBracketSegment(
   String seg,
   String defaultDelimiter,
 ) {
-  bool hasLengthMarker = false;
   String content = seg;
-
-  // Check for length marker
-  if (content.startsWith(HASH)) {
-    hasLengthMarker = true;
-    content = content.substring(1);
-  }
 
   // Check for delimiter suffix
   String delimiter = defaultDelimiter;
@@ -143,7 +134,6 @@ BracketSegmentResult parseBracketSegment(
   return BracketSegmentResult(
     length: length,
     delimiter: delimiter,
-    hasLengthMarker: hasLengthMarker,
   );
 }
 
