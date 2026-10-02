@@ -1,40 +1,17 @@
-# TOON Format for Dart
+# TOON for Dart
 
-[![pub package](https://img.shields.io/pub/v/toon_format.svg)](https://pub.dev/packages/toon_format)
-[![Documentation](https://pub.dev/documentation/toon_format/latest/)](https://pub.dev/documentation/toon_format/latest/)
+[![SPEC v1.4](https://img.shields.io/badge/spec-v1.4-lightgrey)](https://github.com/toon-format/spec/blob/v1.4.0/SPEC.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
-**Token-Oriented Object Notation** is a compact, human-readable format designed for passing structured data to Large Language Models with significantly reduced token usage.
+Encodes Dart values to [TOON (Token-Oriented Object Notation)](https://github.com/toon-format/toon) and decodes TOON back. TOON is a compact, indentation-based encoding of the JSON data model for LLM input.
 
-## Status
+## Installation
 
-`toon-spec: 1.4` – [`test/known_failures.dart`](./test/known_failures.dart) lists the [v4.1](https://github.com/toon-format/spec/blob/main/SPEC.md) fixture cases this package doesn't pass yet. The `0.1.0` release on pub.dev is a namespace placeholder; this implementation isn't published yet.
+The `0.1.0` release on pub.dev is a namespace placeholder, so install from Git:
 
-### Example
-
-**JSON** (verbose):
-```json
-{
-  "users": [
-    { "id": 1, "name": "Alice", "role": "admin" },
-    { "id": 2, "name": "Bob", "role": "user" }
-  ]
-}
+```bash
+dart pub add toon_format --git-url https://github.com/toon-format/toon-dart.git
 ```
-
-**TOON** (compact):
-```
-users[2]{id,name,role}:
-  1,Alice,admin
-  2,Bob,user
-```
-
-## Resources
-
-- [TOON Specification](https://github.com/johannschopplich/toon/blob/main/SPEC.md)
-- [Main Repository](https://github.com/johannschopplich/toon)
-- [Benchmarks & Performance](https://github.com/johannschopplich/toon#benchmarks)
-- [Other Language Implementations](https://github.com/johannschopplich/toon#other-implementations)
 
 ## Usage
 
@@ -42,26 +19,49 @@ users[2]{id,name,role}:
 import 'package:toon_format/toon_format.dart';
 
 void main() {
-  final data = {
+  final toon = encode({
     'users': [
-      {'id': 1, 'name': 'Alice', 'role': 'admin'},
-      {'id': 2, 'name': 'Bob', 'role': 'user'}
-    ]
-  };
+      {'id': 1, 'name': 'Ada', 'role': 'admin'},
+      {'id': 2, 'name': 'Bob', 'role': 'user'},
+    ],
+  });
+  print(toon);
+  // users[2]{id,name,role}:
+  //   1,Ada,admin
+  //   2,Bob,user
 
-  final toonString = encode(data);
-  final decoded = decode(toonString);
+  print(decode(toon));
+  // {users: [{id: 1.0, name: Ada, role: admin}, {id: 2.0, name: Bob, role: user}]}
 }
 ```
 
+Pass `EncodeOptions` to `encode` and `DecodeOptions` to `decode`, e.g. `encode(data, options: const EncodeOptions(delimiter: '|'))`:
+
+| Option | Default | Description |
+| ------ | ------- | ----------- |
+| `EncodeOptions.indent` | `2` | Spaces per indentation level |
+| `EncodeOptions.delimiter` | `','` | Delimiter for inline arrays and tabular rows: `','`, `'\t'`, or `'\|'` |
+| `DecodeOptions.indent` | `2` | Expected spaces per indentation level |
+| `DecodeOptions.strict` | `true` | Error on length mismatches, blank lines inside arrays, and tabs or uneven indentation |
+
+## Specification
+
+Targets [TOON spec v1.4](https://github.com/toon-format/spec/blob/v1.4.0/SPEC.md). The test suite runs the spec's conformance fixtures, and [`test/known_failures.dart`](./test/known_failures.dart) lists the cases this port does not pass yet.
+
+- **Numbers decode to `double`** – a token that overflows `double` (e.g. `1e999`) stays a string, and integers beyond 2^53 lose precision ([§4](https://github.com/toon-format/spec/blob/v1.4.0/SPEC.md#4-decoding-interpretation-reference-decoder))
+- **Host values normalize to the JSON model** – `NaN` and infinities → `null`, `-0.0` → `0`, `BigInt` → number within ±(2^53 − 1) and a quoted decimal string beyond, `DateTime` → ISO 8601 string, `Set` → array, `Map` keys → `toString()`, anything else → `null` ([§3](https://github.com/toon-format/spec/blob/v1.4.0/SPEC.md#3-encoding-normalization-reference-encoder))
+
+## Resources
+
+- **Specification:** [SPEC.md](https://github.com/toon-format/spec/blob/main/SPEC.md) – Normative rules and conformance checklists
+- **Format Overview:** [toonformat.dev](https://toonformat.dev/guide/format-overview) – Every form with examples
+- **Other Implementations:** [toonformat.dev](https://toonformat.dev/ecosystem/implementations) – TOON in other languages
+- **Examples:** [example/](./example/) – Encode and decode samples
+
 ## Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) and [`test/README.md`](./test/README.md).
-
-## Contributors
-
-- [Tushar Gupta](https://github.com/Tushargupta9800)
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for the development setup and pull request guidelines.
 
 ## License
 
-MIT License © 2025-PRESENT [Johann Schopplich](https://github.com/johannschopplich) & [Tushar Gupta](https://github.com/Tushargupta9800)
+[MIT](./LICENSE) License © 2025-PRESENT [Tushar Gupta](https://github.com/Tushargupta9800) and [Johann Schopplich](https://github.com/johannschopplich)
