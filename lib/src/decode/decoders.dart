@@ -72,7 +72,7 @@ JsonObject decodeObject(LineCursor cursor, Depth baseDepth, ResolvedDecodeOption
     }
 
     if (computedDepth != null && line.depth == computedDepth) {
-      final pair = decodeKeyValuePair(line, cursor, computedDepth!, options);
+      final pair = decodeKeyValuePair(line, cursor, computedDepth, options);
       obj[pair.key] = pair.value;
     } else {
       // Different depth (shallower or deeper) - stop object parsing
