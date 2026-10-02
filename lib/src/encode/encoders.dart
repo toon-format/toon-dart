@@ -7,7 +7,6 @@ import 'writer.dart';
 
 // #region Encode normalized JsonValue
 
-/// Encodes a JsonValue to TOON format.
 String encodeValue(JsonValue value, EncodeOptions options) {
   if (isJsonPrimitive(value)) {
     return encodePrimitive(value, options.delimiter);
@@ -28,7 +27,6 @@ String encodeValue(JsonValue value, EncodeOptions options) {
 
 // #region Object encoding
 
-/// Encodes a JSON object.
 void encodeObject(JsonObject value, LineWriter writer, int depth, EncodeOptions options) {
   final keys = value.keys.toList();
 
@@ -37,7 +35,6 @@ void encodeObject(JsonObject value, LineWriter writer, int depth, EncodeOptions 
   }
 }
 
-/// Encodes a key-value pair.
 void encodeKeyValuePair(String key, JsonValue? value, LineWriter writer, int depth, EncodeOptions options) {
   final encodedKey = encodeKey(key);
 
@@ -48,7 +45,6 @@ void encodeKeyValuePair(String key, JsonValue? value, LineWriter writer, int dep
   } else if (isJsonObject(value)) {
     final nestedKeys = (value as JsonObject).keys.toList();
     if (nestedKeys.isEmpty) {
-      // Empty object
       writer.push(depth, '$encodedKey:');
     } else {
       writer.push(depth, '$encodedKey:');
@@ -61,7 +57,6 @@ void encodeKeyValuePair(String key, JsonValue? value, LineWriter writer, int dep
 
 // #region Array encoding
 
-/// Encodes a JSON array.
 void encodeArray(
   String? key,
   JsonArray value,
@@ -75,14 +70,12 @@ void encodeArray(
     return;
   }
 
-  // Primitive array
   if (isArrayOfPrimitives(value)) {
     final formatted = encodeInlineArrayLine(value, options.delimiter, key);
     writer.push(depth, formatted);
     return;
   }
 
-  // Array of arrays (all primitives)
   if (isArrayOfArrays(value)) {
     final allPrimitiveArrays = value.every((arr) => isArrayOfPrimitives(arr as JsonArray));
     if (allPrimitiveArrays) {
@@ -91,7 +84,6 @@ void encodeArray(
     }
   }
 
-  // Array of objects
   if (isArrayOfObjects(value)) {
     final objects = value.cast<JsonObject>();
     final header = extractTabularHeader(objects);
@@ -103,7 +95,6 @@ void encodeArray(
     return;
   }
 
-  // Mixed array: fallback to expanded format
   encodeMixedArrayAsListItems(key, value, writer, depth, options);
 }
 
@@ -111,7 +102,6 @@ void encodeArray(
 
 // #region Array of arrays (expanded format)
 
-/// Encodes an array of arrays as list items.
 void encodeArrayOfArraysAsListItems(
   String? prefix,
   List<JsonArray> values,
@@ -130,11 +120,9 @@ void encodeArrayOfArraysAsListItems(
   }
 }
 
-/// Encodes an inline array line.
 String encodeInlineArrayLine(List<JsonPrimitive> values, String delimiter, String? prefix) {
   final header = formatHeader(values.length, key: prefix, delimiter: delimiter);
   final joinedValue = encodeAndJoinPrimitives(values, delimiter);
-  // Only add space if there are values
   if (values.isEmpty) {
     return header;
   }
@@ -145,7 +133,6 @@ String encodeInlineArrayLine(List<JsonPrimitive> values, String delimiter, Strin
 
 // #region Array of objects (tabular format)
 
-/// Encodes an array of objects in tabular format.
 void encodeArrayOfObjectsAsTabular(
   String? prefix,
   List<JsonObject> rows,
@@ -160,7 +147,6 @@ void encodeArrayOfObjectsAsTabular(
   writeTabularRows(rows, header, writer, depth + 1, options);
 }
 
-/// Extracts the tabular header from an array of objects.
 List<String>? extractTabularHeader(List<JsonObject> rows) {
   if (rows.isEmpty) return null;
 
@@ -174,7 +160,6 @@ List<String>? extractTabularHeader(List<JsonObject> rows) {
   return null;
 }
 
-/// Checks if an array of objects is tabular (all have same keys and primitive values).
 bool isTabularArray(
   List<JsonObject> rows,
   List<String> header,
@@ -182,12 +167,11 @@ bool isTabularArray(
   for (final row in rows) {
     final keys = row.keys.toList();
 
-    // All objects must have the same keys (but order can differ)
+    // Rows may list the same keys in a different order.
     if (keys.length != header.length) {
       return false;
     }
 
-    // Check that all header keys exist in the row and all values are primitives
     for (final key in header) {
       if (!row.containsKey(key)) {
         return false;
@@ -201,7 +185,6 @@ bool isTabularArray(
   return true;
 }
 
-/// Writes tabular rows.
 void writeTabularRows(
   List<JsonObject> rows,
   List<String> header,
@@ -220,7 +203,6 @@ void writeTabularRows(
 
 // #region Array of objects (expanded format)
 
-/// Encodes a mixed array as list items.
 void encodeMixedArrayAsListItems(
   String? prefix,
   List<JsonValue> items,
@@ -236,7 +218,6 @@ void encodeMixedArrayAsListItems(
   }
 }
 
-/// Encodes an object as a list item.
 void encodeObjectAsListItem(JsonObject obj, LineWriter writer, int depth, EncodeOptions options) {
   final keys = obj.keys.toList();
   if (keys.isEmpty) {
@@ -244,7 +225,6 @@ void encodeObjectAsListItem(JsonObject obj, LineWriter writer, int depth, Encode
     return;
   }
 
-  // First key-value on the same line as "- "
   final firstKey = keys[0];
   final encodedKey = encodeKey(firstKey);
   final firstValue = obj[firstKey];
@@ -254,30 +234,24 @@ void encodeObjectAsListItem(JsonObject obj, LineWriter writer, int depth, Encode
   } else if (isJsonArray(firstValue)) {
     final arr = firstValue as JsonArray;
     if (isArrayOfPrimitives(arr)) {
-      // Inline format for primitive arrays
       final formatted = encodeInlineArrayLine(arr, options.delimiter, firstKey);
       writer.pushListItem(depth, formatted);
     } else if (isArrayOfObjects(arr)) {
-      // Check if array of objects can use tabular format
       final objects = arr.cast<JsonObject>();
       final header = extractTabularHeader(objects);
       if (header != null) {
-        // Tabular format for uniform arrays of objects
         final formattedHeader = formatHeader(arr.length, key: firstKey, fields: header, delimiter: options.delimiter);
         writer.pushListItem(depth, formattedHeader);
         writeTabularRows(objects, header, writer, depth + 1, options);
       } else {
-        // Fall back to list format for non-uniform arrays of objects
         writer.pushListItem(depth, '$encodedKey[${arr.length}]:');
         for (final item in arr) {
           encodeObjectAsListItem(item as JsonObject, writer, depth + 1, options);
         }
       }
     } else {
-      // Complex arrays on separate lines (array of arrays, etc.)
       writer.pushListItem(depth, '$encodedKey[${arr.length}]:');
 
-      // Encode array contents at depth + 1
       for (final item in arr) {
         encodeListItemValue(item, writer, depth + 1, options);
       }
@@ -292,7 +266,6 @@ void encodeObjectAsListItem(JsonObject obj, LineWriter writer, int depth, Encode
     }
   }
 
-  // Remaining keys on indented lines
   for (int i = 1; i < keys.length; i++) {
     final key = keys[i];
     encodeKeyValuePair(key, obj[key], writer, depth + 1, options);
@@ -303,7 +276,6 @@ void encodeObjectAsListItem(JsonObject obj, LineWriter writer, int depth, Encode
 
 // #region List item encoding helpers
 
-/// Encodes a list item value.
 void encodeListItemValue(
   JsonValue value,
   LineWriter writer,
@@ -322,7 +294,5 @@ void encodeListItemValue(
     encodeObjectAsListItem(value as JsonObject, writer, depth, options);
   }
 }
-
-// #endregion
 
 // #endregion

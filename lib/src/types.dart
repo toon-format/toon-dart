@@ -1,18 +1,11 @@
-/// Type definitions for TOON format encoding and decoding.
-
-/// JSON primitive types (string, number, boolean, null).
 typedef JsonPrimitive = Object?; // null, String, num, bool
 
-/// JSON array type.
 typedef JsonArray = List<JsonValue>;
 
-/// JSON object type.
 typedef JsonObject = Map<String, JsonValue>;
 
-/// JSON value type (primitive, array, or object).
 typedef JsonValue = Object?; // JsonPrimitive | JsonArray | JsonObject
 
-/// Parsed line information.
 class ParsedLine {
   final String raw;
   final int indent;
@@ -29,7 +22,6 @@ class ParsedLine {
   });
 }
 
-/// Blank line information.
 class BlankLineInfo {
   final int lineNumber;
   final int indent;
@@ -42,7 +34,6 @@ class BlankLineInfo {
   });
 }
 
-/// Array header information.
 class ArrayHeaderInfo {
   final String? key;
   final int length;
@@ -57,7 +48,6 @@ class ArrayHeaderInfo {
   });
 }
 
-/// Result of parsing an array header line.
 class ArrayHeaderParseResult {
   final ArrayHeaderInfo header;
   final String? inlineValues;
@@ -68,7 +58,6 @@ class ArrayHeaderParseResult {
   });
 }
 
-/// Result of parsing a bracket segment.
 class BracketSegmentResult {
   final int length;
   final String delimiter;
@@ -79,7 +68,6 @@ class BracketSegmentResult {
   });
 }
 
-/// Result of parsing a key token.
 class KeyTokenResult {
   final String key;
   final int end;
@@ -90,7 +78,6 @@ class KeyTokenResult {
   });
 }
 
-/// Result of decoding a key-value pair.
 class KeyValueResult {
   final String key;
   final JsonValue value;
@@ -103,7 +90,6 @@ class KeyValueResult {
   });
 }
 
-/// Result of decoding a key-value pair (simple version).
 class KeyValuePairResult {
   final String key;
   final JsonValue value;

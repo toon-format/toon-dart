@@ -1,6 +1,5 @@
 import '../utilities/constants.dart';
 
-/// Line writer for building TOON output with proper indentation.
 class LineWriter {
   final List<String> _lines = [];
   final String _indentationString;

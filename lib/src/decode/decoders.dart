@@ -8,45 +8,36 @@ import 'validation.dart';
 
 // #region Entry decoding
 
-/// Decodes a value from lines.
 JsonValue decodeValueFromLines(LineCursor cursor, DecodeOptions options) {
   final first = cursor.peek();
   if (first == null) {
     return <String, JsonValue>{};
   }
 
-  // Check for root array
   if (isArrayHeaderAfterHyphen(first.content)) {
     final headerInfo = parseArrayHeaderLine(first.content, defaultDelimiter);
     if (headerInfo != null) {
-      cursor.advance(); // Move past the header line
+      cursor.advance();
       return decodeArrayFromHeader(headerInfo.header, headerInfo.inlineValues, cursor, 0, options);
     }
   }
 
-  // Check for single primitive value
   if (cursor.length == 1 && !isKeyValueLine(first)) {
     return parsePrimitiveToken(first.content.trim());
   }
 
-  // Default to object
   return decodeObject(cursor, 0, options);
 }
 
-/// Checks if a line is a key-value line.
 bool isKeyValueLine(ParsedLine line) {
   final content = line.content;
-  // Look for unquoted colon or quoted key followed by colon
   if (content.startsWith('"')) {
-    // Quoted key - find the closing quote
     final closingQuoteIndex = findClosingQuote(content, 0);
     if (closingQuoteIndex == -1) {
       return false;
     }
-    // Check if colon exists after quoted key (may have array/brace syntax between)
     return content.substring(closingQuoteIndex + 1).contains(colon);
   } else {
-    // Unquoted key - look for first colon not inside quotes
     return content.contains(colon);
   }
 }
@@ -55,11 +46,11 @@ bool isKeyValueLine(ParsedLine line) {
 
 // #region Object decoding
 
-/// Decodes an object from lines.
 JsonObject decodeObject(LineCursor cursor, int baseDepth, DecodeOptions options) {
   final obj = <String, JsonValue>{};
 
-  // Detect the actual depth of the first field (may differ from baseDepth in nested structures)
+  // The first field sets the depth, which can sit deeper than `baseDepth` in
+  // nested structures.
   int? computedDepth;
 
   while (!cursor.atEnd()) {
@@ -76,7 +67,6 @@ JsonObject decodeObject(LineCursor cursor, int baseDepth, DecodeOptions options)
       final pair = decodeKeyValuePair(line, cursor, computedDepth, options);
       obj[pair.key] = pair.value;
     } else {
-      // Different depth (shallower or deeper) - stop object parsing
       break;
     }
   }
@@ -84,18 +74,15 @@ JsonObject decodeObject(LineCursor cursor, int baseDepth, DecodeOptions options)
   return obj;
 }
 
-/// Decodes a key-value pair from content.
 KeyValueResult decodeKeyValue(
   String content,
   LineCursor cursor,
   int baseDepth,
   DecodeOptions options,
 ) {
-  // Check for array header first (before parsing key)
   final arrayHeader = parseArrayHeaderLine(content, defaultDelimiter);
   if (arrayHeader != null && arrayHeader.header.key != null) {
     final value = decodeArrayFromHeader(arrayHeader.header, arrayHeader.inlineValues, cursor, baseDepth, options);
-    // After an array, subsequent fields are at baseDepth + 1 (where array content is)
     return KeyValueResult(
       key: arrayHeader.header.key!,
       value: value,
@@ -103,27 +90,22 @@ KeyValueResult decodeKeyValue(
     );
   }
 
-  // Regular key-value pair
   final keyToken = parseKeyToken(content, 0);
   final rest = content.substring(keyToken.end).trim();
 
-  // No value after colon - expect nested object or empty
   if (rest.isEmpty) {
     final nextLine = cursor.peek();
     if (nextLine != null && nextLine.depth > baseDepth) {
       final nested = decodeObject(cursor, baseDepth + 1, options);
       return KeyValueResult(key: keyToken.key, value: nested, followDepth: baseDepth + 1);
     }
-    // Empty object
     return KeyValueResult(key: keyToken.key, value: const <String, JsonValue>{}, followDepth: baseDepth + 1);
   }
 
-  // Inline primitive value
   final value = parsePrimitiveToken(rest);
   return KeyValueResult(key: keyToken.key, value: value, followDepth: baseDepth + 1);
 }
 
-/// Decodes a key-value pair from a line.
 KeyValuePairResult decodeKeyValuePair(
   ParsedLine line,
   LineCursor cursor,
@@ -139,7 +121,6 @@ KeyValuePairResult decodeKeyValuePair(
 
 // #region Array decoding
 
-/// Decodes an array from a header.
 JsonArray decodeArrayFromHeader(
   ArrayHeaderInfo header,
   String? inlineValues,
@@ -147,25 +128,17 @@ JsonArray decodeArrayFromHeader(
   int baseDepth,
   DecodeOptions options,
 ) {
-  // Inline primitive array
   if (inlineValues != null) {
-    // For inline arrays, cursor should already be advanced or will be by caller
     return decodeInlinePrimitiveArray(header, inlineValues, options);
   }
 
-  // For multi-line arrays (tabular or list), the cursor should already be positioned
-  // at the array header line, but we haven't advanced past it yet
-
-  // Tabular array
   if (header.fields != null && header.fields!.isNotEmpty) {
     return decodeTabularArray(header, cursor, baseDepth, options);
   }
 
-  // List array
   return decodeListArray(header, cursor, baseDepth, options);
 }
 
-/// Decodes an inline primitive array.
 List<JsonPrimitive> decodeInlinePrimitiveArray(
   ArrayHeaderInfo header,
   String inlineValues,
@@ -184,7 +157,6 @@ List<JsonPrimitive> decodeInlinePrimitiveArray(
   return primitives;
 }
 
-/// Decodes a list array.
 List<JsonValue> decodeListArray(
   ArrayHeaderInfo header,
   LineCursor cursor,
@@ -194,7 +166,6 @@ List<JsonValue> decodeListArray(
   final items = <JsonValue>[];
   final itemDepth = baseDepth + 1;
 
-  // Track line range for blank line validation
   int? startLine;
   int? endLine;
 
@@ -204,11 +175,9 @@ List<JsonValue> decodeListArray(
       break;
     }
 
-    // Check for list item (with or without space after hyphen)
     final isListItem = line.content.startsWith(listItemPrefix) || line.content == '-';
 
     if (line.depth == itemDepth && isListItem) {
-      // Track first and last item line numbers
       if (startLine == null) {
         startLine = line.lineNumber;
       }
@@ -217,7 +186,6 @@ List<JsonValue> decodeListArray(
       final item = decodeListItem(cursor, itemDepth, options);
       items.add(item);
 
-      // Update endLine to the current cursor position (after item was decoded)
       final currentLine = cursor.current();
       if (currentLine != null) {
         endLine = currentLine.lineNumber;
@@ -229,18 +197,16 @@ List<JsonValue> decodeListArray(
 
   assertExpectedCount(items.length, header.length, 'list array items', options);
 
-  // In strict mode, check for blank lines inside the array
   if (options.strict && startLine != null && endLine != null) {
     validateNoBlankLinesInRange(
-      startLine, // From first item line
-      endLine, // To last item line
+      startLine,
+      endLine,
       cursor.getBlankLines(),
       options.strict,
       'list array',
     );
   }
 
-  // In strict mode, check for extra items
   if (options.strict) {
     validateNoExtraListItems(cursor, itemDepth, header.length);
   }
@@ -248,7 +214,6 @@ List<JsonValue> decodeListArray(
   return items;
 }
 
-/// Decodes a tabular array.
 List<JsonObject> decodeTabularArray(
   ArrayHeaderInfo header,
   LineCursor cursor,
@@ -258,7 +223,6 @@ List<JsonObject> decodeTabularArray(
   final objects = <JsonObject>[];
   final rowDepth = baseDepth + 1;
 
-  // Track line range for blank line validation
   int? startLine;
   int? endLine;
 
@@ -269,7 +233,6 @@ List<JsonObject> decodeTabularArray(
     }
 
     if (line.depth == rowDepth) {
-      // Track first and last row line numbers
       startLine ??= line.lineNumber;
       endLine = line.lineNumber;
 
@@ -292,18 +255,16 @@ List<JsonObject> decodeTabularArray(
 
   assertExpectedCount(objects.length, header.length, 'tabular rows', options);
 
-  // In strict mode, check for blank lines inside the array
   if (options.strict && startLine != null && endLine != null) {
     validateNoBlankLinesInRange(
-      startLine, // From first row line
-      endLine, // To last row line
+      startLine,
+      endLine,
       cursor.getBlankLines(),
       options.strict,
       'tabular array',
     );
   }
 
-  // In strict mode, check for extra rows
   if (options.strict) {
     validateNoExtraTabularRows(cursor, rowDepth, header);
   }
@@ -315,7 +276,6 @@ List<JsonObject> decodeTabularArray(
 
 // #region List item decoding
 
-/// Decodes a list item.
 JsonValue decodeListItem(
   LineCursor cursor,
   int baseDepth,
@@ -326,10 +286,8 @@ JsonValue decodeListItem(
     throw StateError('Expected list item');
   }
 
-  // Check for list item (with or without space after hyphen)
   String afterHyphen;
 
-  // Empty list item should be an empty object
   if (line.content == '-') {
     return <String, JsonValue>{};
   } else if (line.content.startsWith(listItemPrefix)) {
@@ -338,12 +296,10 @@ JsonValue decodeListItem(
     throw FormatException('Expected list item to start with "$listItemPrefix"');
   }
 
-  // Empty content after list item should also be an empty object
   if (afterHyphen.trim().isEmpty) {
     return <String, JsonValue>{};
   }
 
-  // Check for array header after hyphen
   if (isArrayHeaderAfterHyphen(afterHyphen)) {
     final arrayHeader = parseArrayHeaderLine(afterHyphen, defaultDelimiter);
     if (arrayHeader != null) {
@@ -351,16 +307,13 @@ JsonValue decodeListItem(
     }
   }
 
-  // Check for object first field after hyphen
   if (isObjectFirstFieldAfterHyphen(afterHyphen)) {
     return decodeObjectFromListItem(line, cursor, baseDepth, options);
   }
 
-  // Primitive value
   return parsePrimitiveToken(afterHyphen);
 }
 
-/// Decodes an object from a list item.
 JsonObject decodeObjectFromListItem(
   ParsedLine firstLine,
   LineCursor cursor,
@@ -372,7 +325,6 @@ JsonObject decodeObjectFromListItem(
 
   final obj = <String, JsonValue>{result.key: result.value};
 
-  // Read subsequent fields
   while (!cursor.atEnd()) {
     final line = cursor.peek();
     if (line == null || line.depth < result.followDepth) {

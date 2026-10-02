@@ -1,5 +1,3 @@
-/// Constants for TOON format encoding and decoding.
-
 // #region List markers
 
 const String listItemMarker = '-';
