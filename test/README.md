@@ -1,13 +1,11 @@
 # TOON Conformance Tests
 
-`conformance_test.dart` runs every case of the [toon-format/spec](https://github.com/toon-format/spec) fixtures, vendored in `fixtures/` from the tag in `fixtures/VERSION`. Cases in `known_failures.dart` must still fail; remove an entry once its case passes.
+`conformance_test.dart` runs every case of the [toon-format/spec](https://github.com/toon-format/spec) fixtures from the `spec` submodule, pinned to the spec tag this port implements. Cases in `known_failures.dart` must still fail; remove an entry once its case passes.
 
-To sync a later spec tag:
+To move to a later spec tag, check it out in the submodule and commit the bump:
 
 ```bash
-TAG=v4.1.2
-rm -rf test/fixtures/encode test/fixtures/decode
-curl -sL "https://github.com/toon-format/spec/archive/refs/tags/$TAG.tar.gz" \
-  | tar -xz -C test/fixtures --strip-components=3 "spec-${TAG#v}/tests/fixtures"
-echo "$TAG" > test/fixtures/VERSION
+git -C test/spec fetch --tags
+git -C test/spec checkout v4.1.2
+git add test/spec
 ```

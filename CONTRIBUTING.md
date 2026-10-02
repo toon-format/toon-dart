@@ -5,7 +5,7 @@
 The package requires Dart 3.0 or later (`sdk: ^3.0.0` in `pubspec.yaml`).
 
 ```bash
-git clone https://github.com/toon-format/toon-dart.git
+git clone --recurse-submodules https://github.com/toon-format/toon-dart.git
 cd toon-dart
 dart pub get
 dart test
@@ -15,7 +15,7 @@ dart test
 
 - Run `dart format .` before committing.
 - Run `dart analyze` – `analysis_options.yaml` extends `package:lints/recommended.yaml` with `prefer_single_quotes`, `prefer_const_constructors`, `prefer_final_locals`, and `unnecessary_this`.
-- `dart test` runs the spec conformance fixtures in `test/fixtures/` – see [`test/README.md`](./test/README.md) for syncing a later spec tag and for `test/known_failures.dart`.
+- `dart test` runs the spec conformance fixtures from the `test/spec` submodule – see [`test/README.md`](./test/README.md) for bumping the spec tag and for `test/known_failures.dart`.
 
 ## Pull Requests
 

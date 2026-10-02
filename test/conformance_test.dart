@@ -8,7 +8,7 @@ import 'known_failures.dart';
 
 void main() {
   for (final category in const ['encode', 'decode']) {
-    final files = Directory('test/fixtures/$category')
+    final files = Directory('test/spec/tests/fixtures/$category')
         .listSync()
         .whereType<File>()
         .where((f) => f.path.endsWith('.json'))
