@@ -1,7 +1,5 @@
-import '../types.dart';
 import '../utilities/constants.dart';
 
-/// Line writer for building TOON output with proper indentation.
 class LineWriter {
   final List<String> _lines = [];
   final String _indentationString;
@@ -12,13 +10,13 @@ class LineWriter {
     }
   }
 
-  void push(Depth depth, String content) {
+  void push(int depth, String content) {
     final indent = _indentationString * depth;
     _lines.add('$indent$content');
   }
 
-  void pushListItem(Depth depth, String content) {
-    push(depth, '$LIST_ITEM_PREFIX$content');
+  void pushListItem(int depth, String content) {
+    push(depth, '$listItemPrefix$content');
   }
 
   @override

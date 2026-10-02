@@ -1,5 +1,3 @@
-/// Constants for TOON format encoding and decoding.
-
 // #region List markers
 
 const String listItemMarker = '-';
@@ -13,7 +11,6 @@ const String comma = ',';
 const String colon = ':';
 const String space = ' ';
 const String pipe = '|';
-const String hash = '#';
 
 // #endregion
 
@@ -48,24 +45,4 @@ const String tab = '\t';
 
 const String defaultDelimiter = comma;
 
-// Export constants
-const String LIST_ITEM_MARKER = listItemMarker;
-const String LIST_ITEM_PREFIX = listItemPrefix;
-const String COMMA = comma;
-const String COLON = colon;
-const String SPACE = space;
-const String PIPE = pipe;
-const String HASH = hash;
-const String OPEN_BRACKET = openBracket;
-const String CLOSE_BRACKET = closeBracket;
-const String OPEN_BRACE = openBrace;
-const String CLOSE_BRACE = closeBrace;
-const String NULL_LITERAL = nullLiteral;
-const String TRUE_LITERAL = trueLiteral;
-const String FALSE_LITERAL = falseLiteral;
-const String BACKSLASH = backslash;
-const String DOUBLE_QUOTE = doubleQuote;
-const String NEWLINE = newline;
-const String CARRIAGE_RETURN = carriageReturn;
-const String TAB = tab;
-const String DEFAULT_DELIMITER = defaultDelimiter;
+// #endregion

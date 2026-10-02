@@ -22,6 +22,8 @@ jobs:
         sdk: ['3.8', stable]
     steps:
       - uses: actions/checkout@v7
+        with:
+          submodules: true
       - uses: dart-lang/setup-dart@v1
         with:
           sdk: ${{ matrix.sdk }}

@@ -1,29 +1,16 @@
-/// Type definitions for TOON format encoding and decoding.
-
-/// JSON primitive types (string, number, boolean, null).
 typedef JsonPrimitive = Object?; // null, String, num, bool
 
-/// JSON array type.
 typedef JsonArray = List<JsonValue>;
 
-/// JSON object type.
 typedef JsonObject = Map<String, JsonValue>;
 
-/// JSON value type (primitive, array, or object).
 typedef JsonValue = Object?; // JsonPrimitive | JsonArray | JsonObject
 
-/// Depth level for indentation (non-negative integer).
-typedef Depth = int;
-
-/// Delimiter type for array values and tabular rows.
-typedef Delimiter = String;
-
-/// Parsed line information.
 class ParsedLine {
   final String raw;
   final int indent;
   final String content;
-  final Depth depth;
+  final int depth;
   final int lineNumber;
 
   const ParsedLine({
@@ -35,11 +22,10 @@ class ParsedLine {
   });
 }
 
-/// Blank line information.
 class BlankLineInfo {
   final int lineNumber;
   final int indent;
-  final Depth depth;
+  final int depth;
 
   const BlankLineInfo({
     required this.lineNumber,
@@ -48,48 +34,20 @@ class BlankLineInfo {
   });
 }
 
-/// Array header information.
 class ArrayHeaderInfo {
   final String? key;
   final int length;
-  final Delimiter delimiter;
+  final String delimiter;
   final List<String>? fields;
-  final bool hasLengthMarker;
 
   const ArrayHeaderInfo({
     this.key,
     required this.length,
     required this.delimiter,
     this.fields,
-    required this.hasLengthMarker,
   });
 }
 
-/// Resolved encode options.
-class ResolvedEncodeOptions {
-  final int indent;
-  final Delimiter delimiter;
-  final String? lengthMarker;
-
-  const ResolvedEncodeOptions({
-    required this.indent,
-    required this.delimiter,
-    this.lengthMarker,
-  });
-}
-
-/// Resolved decode options.
-class ResolvedDecodeOptions {
-  final int indent;
-  final bool strict;
-
-  const ResolvedDecodeOptions({
-    required this.indent,
-    required this.strict,
-  });
-}
-
-/// Result of parsing an array header line.
 class ArrayHeaderParseResult {
   final ArrayHeaderInfo header;
   final String? inlineValues;
@@ -100,20 +58,16 @@ class ArrayHeaderParseResult {
   });
 }
 
-/// Result of parsing a bracket segment.
 class BracketSegmentResult {
   final int length;
   final String delimiter;
-  final bool hasLengthMarker;
 
   const BracketSegmentResult({
     required this.length,
     required this.delimiter,
-    required this.hasLengthMarker,
   });
 }
 
-/// Result of parsing a key token.
 class KeyTokenResult {
   final String key;
   final int end;
@@ -124,11 +78,10 @@ class KeyTokenResult {
   });
 }
 
-/// Result of decoding a key-value pair.
 class KeyValueResult {
   final String key;
   final JsonValue value;
-  final Depth followDepth;
+  final int followDepth;
 
   const KeyValueResult({
     required this.key,
@@ -137,7 +90,6 @@ class KeyValueResult {
   });
 }
 
-/// Result of decoding a key-value pair (simple version).
 class KeyValuePairResult {
   final String key;
   final JsonValue value;

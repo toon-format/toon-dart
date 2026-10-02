@@ -1,10 +1,5 @@
-/// Token-Oriented Object Notation (TOON) encoder and decoder for Dart.
-///
-/// TOON is a compact, human-readable format designed for passing structured
-/// data to Large Language Models with significantly reduced token usage.
-///
-/// For the specification, see https://github.com/toon-format/spec/blob/main/SPEC.md
-library toon_format;
+/// TOON encoder and decoder, see https://github.com/toon-format/spec/blob/main/SPEC.md
+library;
 
 export 'src/options.dart';
 
@@ -14,25 +9,16 @@ import 'src/encode/encoders.dart';
 import 'src/encode/normalize.dart';
 import 'src/options.dart';
 
-/// Encodes a value to TOON format.
-///
-/// [value] The value to encode (will be normalized to JSON-compatible types)
-/// [options] Optional encoding options
-/// Returns a TOON-formatted string
+/// Encodes [value] as TOON after normalizing it to the JSON data model.
 String encode(Object? value, {EncodeOptions? options}) {
   final normalized = normalizeValue(value);
-  final resolvedOptions = (options ?? const EncodeOptions()).resolve();
-  return encodeValue(normalized, resolvedOptions);
+  return encodeValue(normalized, options ?? const EncodeOptions());
 }
 
-/// Decodes a TOON-formatted string to a Dart value.
-///
-/// [input] The TOON-formatted string to parse
-/// [options] Optional decoding options
-/// Returns a Dart value (Map, List, or primitive) representing the parsed TOON data
+/// Decodes TOON [input] to a `Map`, `List`, or primitive.
 Object? decode(String input, {DecodeOptions? options}) {
-  final resolvedOptions = (options ?? const DecodeOptions()).resolve();
-  final scanResult = toParsedLines(input, resolvedOptions.indent, resolvedOptions.strict);
+  options ??= const DecodeOptions();
+  final scanResult = toParsedLines(input, options.indent, options.strict);
   final cursor = LineCursor(scanResult.lines, scanResult.blankLines);
-  return decodeValueFromLines(cursor, resolvedOptions);
+  return decodeValueFromLines(cursor, options);
 }

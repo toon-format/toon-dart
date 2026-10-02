@@ -1,53 +1,47 @@
 import '../utilities/constants.dart';
 
-/// Escapes special characters in a string for encoding.
-///
-/// Handles backslashes, quotes, newlines, carriage returns, and tabs.
 String escapeString(String value) {
   return value
-      .replaceAll(BACKSLASH, '$BACKSLASH$BACKSLASH')
-      .replaceAll(DOUBLE_QUOTE, '$BACKSLASH$DOUBLE_QUOTE')
-      .replaceAll(NEWLINE, '${BACKSLASH}n')
-      .replaceAll(CARRIAGE_RETURN, '${BACKSLASH}r')
-      .replaceAll(TAB, '${BACKSLASH}t');
+      .replaceAll(backslash, '$backslash$backslash')
+      .replaceAll(doubleQuote, '$backslash$doubleQuote')
+      .replaceAll(newline, '${backslash}n')
+      .replaceAll(carriageReturn, '${backslash}r')
+      .replaceAll(tab, '${backslash}t');
 }
 
-/// Unescapes a string by processing escape sequences.
-///
-/// Handles `\n`, `\t`, `\r`, `\\`, and `\"` escape sequences.
 String unescapeString(String value) {
   final result = StringBuffer();
   int i = 0;
 
   while (i < value.length) {
-    if (value[i] == BACKSLASH) {
+    if (value[i] == backslash) {
       if (i + 1 >= value.length) {
         throw FormatException('Invalid escape sequence: backslash at end of string');
       }
 
       final next = value[i + 1];
       if (next == 'n') {
-        result.write(NEWLINE);
+        result.write(newline);
         i += 2;
         continue;
       }
       if (next == 't') {
-        result.write(TAB);
+        result.write(tab);
         i += 2;
         continue;
       }
       if (next == 'r') {
-        result.write(CARRIAGE_RETURN);
+        result.write(carriageReturn);
         i += 2;
         continue;
       }
-      if (next == BACKSLASH) {
-        result.write(BACKSLASH);
+      if (next == backslash) {
+        result.write(backslash);
         i += 2;
         continue;
       }
-      if (next == DOUBLE_QUOTE) {
-        result.write(DOUBLE_QUOTE);
+      if (next == doubleQuote) {
+        result.write(doubleQuote);
         i += 2;
         continue;
       }
@@ -62,45 +56,35 @@ String unescapeString(String value) {
   return result.toString();
 }
 
-/// Finds the index of the closing double quote in a string, accounting for escape sequences.
-///
-/// [content] The string to search in
-/// [start] The index of the opening quote
-/// Returns the index of the closing quote, or -1 if not found
+/// Returns the index of the quote closing the one at [start], skipping escaped
+/// characters, or -1.
 int findClosingQuote(String content, int start) {
   int i = start + 1;
   while (i < content.length) {
-    if (content[i] == BACKSLASH && i + 1 < content.length) {
-      // Skip escaped character
+    if (content[i] == backslash && i + 1 < content.length) {
       i += 2;
       continue;
     }
-    if (content[i] == DOUBLE_QUOTE) {
+    if (content[i] == doubleQuote) {
       return i;
     }
     i++;
   }
-  return -1; // Not found
+  return -1;
 }
 
-/// Finds the index of a specific character outside of quoted sections.
-///
-/// [content] The string to search in
-/// [char] The character to look for
-/// [start] Optional starting index (defaults to 0)
-/// Returns the index of the character, or -1 if not found outside quotes
+/// Returns the index of the first [char] outside quotes from [start] on, or -1.
 int findUnquotedChar(String content, String char, [int start = 0]) {
   bool inQuotes = false;
   int i = start;
 
   while (i < content.length) {
-    if (content[i] == BACKSLASH && i + 1 < content.length && inQuotes) {
-      // Skip escaped character
+    if (content[i] == backslash && i + 1 < content.length && inQuotes) {
       i += 2;
       continue;
     }
 
-    if (content[i] == DOUBLE_QUOTE) {
+    if (content[i] == doubleQuote) {
       inQuotes = !inQuotes;
       i++;
       continue;
