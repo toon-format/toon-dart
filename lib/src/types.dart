@@ -12,18 +12,12 @@ typedef JsonObject = Map<String, JsonValue>;
 /// JSON value type (primitive, array, or object).
 typedef JsonValue = Object?; // JsonPrimitive | JsonArray | JsonObject
 
-/// Depth level for indentation (non-negative integer).
-typedef Depth = int;
-
-/// Delimiter type for array values and tabular rows.
-typedef Delimiter = String;
-
 /// Parsed line information.
 class ParsedLine {
   final String raw;
   final int indent;
   final String content;
-  final Depth depth;
+  final int depth;
   final int lineNumber;
 
   const ParsedLine({
@@ -39,7 +33,7 @@ class ParsedLine {
 class BlankLineInfo {
   final int lineNumber;
   final int indent;
-  final Depth depth;
+  final int depth;
 
   const BlankLineInfo({
     required this.lineNumber,
@@ -52,7 +46,7 @@ class BlankLineInfo {
 class ArrayHeaderInfo {
   final String? key;
   final int length;
-  final Delimiter delimiter;
+  final String delimiter;
   final List<String>? fields;
 
   const ArrayHeaderInfo({
@@ -100,7 +94,7 @@ class KeyTokenResult {
 class KeyValueResult {
   final String key;
   final JsonValue value;
-  final Depth followDepth;
+  final int followDepth;
 
   const KeyValueResult({
     required this.key,

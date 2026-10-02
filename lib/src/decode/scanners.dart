@@ -112,6 +112,6 @@ ScanResult toParsedLines(String source, int indentSize, bool strict) {
 }
 
 /// Computes depth from indent spaces.
-Depth computeDepthFromIndent(int indentSpaces, int indentSize) {
+int computeDepthFromIndent(int indentSpaces, int indentSize) {
   return indentSpaces ~/ indentSize;
 }

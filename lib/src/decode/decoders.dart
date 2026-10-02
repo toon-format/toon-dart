@@ -56,11 +56,11 @@ bool isKeyValueLine(ParsedLine line) {
 // #region Object decoding
 
 /// Decodes an object from lines.
-JsonObject decodeObject(LineCursor cursor, Depth baseDepth, DecodeOptions options) {
+JsonObject decodeObject(LineCursor cursor, int baseDepth, DecodeOptions options) {
   final obj = <String, JsonValue>{};
 
   // Detect the actual depth of the first field (may differ from baseDepth in nested structures)
-  Depth? computedDepth;
+  int? computedDepth;
 
   while (!cursor.atEnd()) {
     final line = cursor.peek();
@@ -88,7 +88,7 @@ JsonObject decodeObject(LineCursor cursor, Depth baseDepth, DecodeOptions option
 KeyValueResult decodeKeyValue(
   String content,
   LineCursor cursor,
-  Depth baseDepth,
+  int baseDepth,
   DecodeOptions options,
 ) {
   // Check for array header first (before parsing key)
@@ -127,7 +127,7 @@ KeyValueResult decodeKeyValue(
 KeyValuePairResult decodeKeyValuePair(
   ParsedLine line,
   LineCursor cursor,
-  Depth baseDepth,
+  int baseDepth,
   DecodeOptions options,
 ) {
   cursor.advance();
@@ -144,7 +144,7 @@ JsonArray decodeArrayFromHeader(
   ArrayHeaderInfo header,
   String? inlineValues,
   LineCursor cursor,
-  Depth baseDepth,
+  int baseDepth,
   DecodeOptions options,
 ) {
   // Inline primitive array
@@ -188,7 +188,7 @@ List<JsonPrimitive> decodeInlinePrimitiveArray(
 List<JsonValue> decodeListArray(
   ArrayHeaderInfo header,
   LineCursor cursor,
-  Depth baseDepth,
+  int baseDepth,
   DecodeOptions options,
 ) {
   final items = <JsonValue>[];
@@ -252,7 +252,7 @@ List<JsonValue> decodeListArray(
 List<JsonObject> decodeTabularArray(
   ArrayHeaderInfo header,
   LineCursor cursor,
-  Depth baseDepth,
+  int baseDepth,
   DecodeOptions options,
 ) {
   final objects = <JsonObject>[];
@@ -318,7 +318,7 @@ List<JsonObject> decodeTabularArray(
 /// Decodes a list item.
 JsonValue decodeListItem(
   LineCursor cursor,
-  Depth baseDepth,
+  int baseDepth,
   DecodeOptions options,
 ) {
   final line = cursor.next();
@@ -364,7 +364,7 @@ JsonValue decodeListItem(
 JsonObject decodeObjectFromListItem(
   ParsedLine firstLine,
   LineCursor cursor,
-  Depth baseDepth,
+  int baseDepth,
   DecodeOptions options,
 ) {
   final afterHyphen = firstLine.content.substring(listItemPrefix.length);

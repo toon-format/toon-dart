@@ -29,7 +29,7 @@ void assertExpectedCount(
 /// Throws [RangeError] if extra items are found
 void validateNoExtraListItems(
   LineCursor cursor,
-  Depth itemDepth,
+  int itemDepth,
   int expectedCount,
 ) {
   if (cursor.atEnd()) return;
@@ -48,7 +48,7 @@ void validateNoExtraListItems(
 /// Throws [RangeError] if extra rows are found
 void validateNoExtraTabularRows(
   LineCursor cursor,
-  Depth rowDepth,
+  int rowDepth,
   ArrayHeaderInfo header,
 ) {
   if (cursor.atEnd()) return;

@@ -29,7 +29,7 @@ String encodeValue(JsonValue value, EncodeOptions options) {
 // #region Object encoding
 
 /// Encodes a JSON object.
-void encodeObject(JsonObject value, LineWriter writer, Depth depth, EncodeOptions options) {
+void encodeObject(JsonObject value, LineWriter writer, int depth, EncodeOptions options) {
   final keys = value.keys.toList();
 
   for (final key in keys) {
@@ -38,7 +38,7 @@ void encodeObject(JsonObject value, LineWriter writer, Depth depth, EncodeOption
 }
 
 /// Encodes a key-value pair.
-void encodeKeyValuePair(String key, JsonValue? value, LineWriter writer, Depth depth, EncodeOptions options) {
+void encodeKeyValuePair(String key, JsonValue? value, LineWriter writer, int depth, EncodeOptions options) {
   final encodedKey = encodeKey(key);
 
   if (isJsonPrimitive(value)) {
@@ -66,7 +66,7 @@ void encodeArray(
   String? key,
   JsonArray value,
   LineWriter writer,
-  Depth depth,
+  int depth,
   EncodeOptions options,
 ) {
   if (value.isEmpty) {
@@ -116,7 +116,7 @@ void encodeArrayOfArraysAsListItems(
   String? prefix,
   List<JsonArray> values,
   LineWriter writer,
-  Depth depth,
+  int depth,
   EncodeOptions options,
 ) {
   final header = formatHeader(values.length, key: prefix, delimiter: options.delimiter);
@@ -151,7 +151,7 @@ void encodeArrayOfObjectsAsTabular(
   List<JsonObject> rows,
   List<String> header,
   LineWriter writer,
-  Depth depth,
+  int depth,
   EncodeOptions options,
 ) {
   final formattedHeader = formatHeader(rows.length, key: prefix, fields: header, delimiter: options.delimiter);
@@ -206,7 +206,7 @@ void writeTabularRows(
   List<JsonObject> rows,
   List<String> header,
   LineWriter writer,
-  Depth depth,
+  int depth,
   EncodeOptions options,
 ) {
   for (final row in rows) {
@@ -225,7 +225,7 @@ void encodeMixedArrayAsListItems(
   String? prefix,
   List<JsonValue> items,
   LineWriter writer,
-  Depth depth,
+  int depth,
   EncodeOptions options,
 ) {
   final header = formatHeader(items.length, key: prefix, delimiter: options.delimiter);
@@ -237,7 +237,7 @@ void encodeMixedArrayAsListItems(
 }
 
 /// Encodes an object as a list item.
-void encodeObjectAsListItem(JsonObject obj, LineWriter writer, Depth depth, EncodeOptions options) {
+void encodeObjectAsListItem(JsonObject obj, LineWriter writer, int depth, EncodeOptions options) {
   final keys = obj.keys.toList();
   if (keys.isEmpty) {
     writer.push(depth, listItemMarker);
@@ -307,7 +307,7 @@ void encodeObjectAsListItem(JsonObject obj, LineWriter writer, Depth depth, Enco
 void encodeListItemValue(
   JsonValue value,
   LineWriter writer,
-  Depth depth,
+  int depth,
   EncodeOptions options,
 ) {
   if (isJsonPrimitive(value)) {
