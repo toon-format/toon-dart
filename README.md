@@ -42,7 +42,7 @@ Pass `EncodeOptions` to `encode` and `DecodeOptions` to `decode`, e.g. `encode(d
 | `EncodeOptions.indentSize` | `2` | Spaces per indentation level |
 | `EncodeOptions.delimiter` | `','` | Delimiter for inline arrays and tabular rows: `','`, `'\t'`, or `'\|'` |
 | `DecodeOptions.indentSize` | `2` | Expected spaces per indentation level |
-| `DecodeOptions.strict` | `true` | Error on length mismatches, blank lines inside arrays, and tabs or uneven indentation |
+| `DecodeOptions.strict` | `true` | Enforces the spec's strict-mode errors, such as count mismatches, duplicate keys, or tab indentation |
 
 ## Specification
 
