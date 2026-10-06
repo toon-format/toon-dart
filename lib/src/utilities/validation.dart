@@ -15,7 +15,7 @@ bool isSafeUnquoted(String value, [String delimiter = comma]) {
     return false;
   }
 
-  if (isBooleanOrNullLiteral(value) || isNumericLike(value)) {
+  if (isBooleanOrNullLiteral(value) || _isNumericLike(value)) {
     return false;
   }
 
@@ -50,11 +50,7 @@ bool isSafeUnquoted(String value, [String delimiter = comma]) {
   return true;
 }
 
-bool isNumericLike(String value) {
-  // Matches `42`, `-3.14`, `1e-6`, and leading-zero forms like `05`.
-  return RegExp(
-        r'^-?\d+(?:\.\d+)?(?:e[+-]?\d+)?$',
-        caseSensitive: false,
-      ).hasMatch(value) ||
-      RegExp(r'^0\d+$').hasMatch(value);
-}
+bool _isNumericLike(String value) => RegExp(
+  r'^[+-]?\d+(?:\.\d+)?(?:e[+-]?\d+)?$',
+  caseSensitive: false,
+).hasMatch(value);
