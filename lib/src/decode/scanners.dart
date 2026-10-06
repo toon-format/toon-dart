@@ -1,5 +1,6 @@
 import '../types.dart';
 import '../utilities/constants.dart';
+import '../utilities/string_utils.dart';
 
 class LineCursor {
   final List<ParsedLine> _lines;
@@ -57,7 +58,7 @@ LineCursor scanLines(String source, int indentSize, bool strict) {
     final tabIndent = strict || firstTabIndex == -1
         ? 0
         : tab.allMatches(leadingWhitespace).length;
-    final content = _trimTrailingSpaces(raw.substring(indent));
+    final content = trimSpaces(raw.substring(indent));
 
     // Only spaces may precede the comment marker. Comment lines vanish before
     // blank-line tracking and strict validation.
@@ -91,12 +92,4 @@ LineCursor scanLines(String source, int indentSize, bool strict) {
   }
 
   return LineCursor(parsed, blankLines);
-}
-
-String _trimTrailingSpaces(String value) {
-  var end = value.length;
-  while (end > 0 && value.codeUnitAt(end - 1) == 0x20) {
-    end--;
-  }
-  return value.substring(0, end);
 }
