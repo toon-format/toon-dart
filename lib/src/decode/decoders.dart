@@ -252,7 +252,8 @@ List<JsonValue> decodeListArray(
   int? startLine;
   int? endLine;
 
-  while (!cursor.atEnd() && items.length < header.length) {
+  // Only strict mode stops at N, leaving a surplus to the check below.
+  while (!cursor.atEnd() && (!options.strict || items.length < header.length)) {
     final line = cursor.peek()!;
     if (line.depth <= baseDepth) {
       break;
@@ -306,7 +307,9 @@ List<JsonObject> decodeTabularArray(
   int? startLine;
   int? endLine;
 
-  while (!cursor.atEnd() && objects.length < header.length) {
+  // Only strict mode stops at N, leaving a surplus to the check below.
+  while (!cursor.atEnd() &&
+      (!options.strict || objects.length < header.length)) {
     final line = cursor.peek()!;
     if (line.depth <= baseDepth) {
       break;
