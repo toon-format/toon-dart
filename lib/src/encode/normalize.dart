@@ -7,7 +7,11 @@ JsonValue normalizeValue(Object? value) {
     return null;
   }
 
-  if (value is String || value is bool) {
+  if (value is String) {
+    return _assertNoLoneSurrogate(value);
+  }
+
+  if (value is bool) {
     return value;
   }
 
@@ -46,12 +50,35 @@ JsonValue normalizeValue(Object? value) {
   if (value is Map) {
     final result = <String, JsonValue>{};
     for (final entry in value.entries) {
-      result[entry.key.toString()] = normalizeValue(entry.value);
+      result[_assertNoLoneSurrogate(entry.key.toString())] = normalizeValue(
+        entry.value,
+      );
     }
     return result;
   }
 
   return null;
+}
+
+// A lone surrogate has no UTF-8 form, so emitting it would silently substitute
+// U+FFFD and break round-tripping.
+String _assertNoLoneSurrogate(String value) {
+  for (var i = 0; i < value.length; i++) {
+    final unit = value.codeUnitAt(i);
+    if (unit < 0xD800 || unit > 0xDFFF) continue;
+    if (unit <= 0xDBFF &&
+        i + 1 < value.length &&
+        (value.codeUnitAt(i + 1) & 0xFC00) == 0xDC00) {
+      i++;
+      continue;
+    }
+    throw ArgumentError.value(
+      value,
+      'value',
+      'Unpaired surrogate U+${unit.toRadixString(16).toUpperCase()} at index $i',
+    );
+  }
+  return value;
 }
 
 // #endregion
