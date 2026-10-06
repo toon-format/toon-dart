@@ -40,7 +40,7 @@ void _runEncode(Map<String, dynamic> fixtureCase) {
   if (fixtureCase['shouldError'] == true) {
     expect(
       () => encode(fixtureCase['input'], options: options),
-      throwsA(anything),
+      throwsArgumentError,
     );
     return;
   }
@@ -56,7 +56,7 @@ void _runDecode(Map<String, dynamic> fixtureCase) {
   );
   final input = fixtureCase['input'] as String;
   if (fixtureCase['shouldError'] == true) {
-    expect(() => decode(input, options: options), throwsA(anything));
+    expect(() => decode(input, options: options), throwsFormatException);
     return;
   }
   final actual = decode(input, options: options);
