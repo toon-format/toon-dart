@@ -327,32 +327,24 @@ List<String> parseDelimitedValues(String input, String delimiter) {
 }
 
 List<JsonPrimitive> mapRowValuesToPrimitives(List<String> values) {
-  return values.map((v) => parsePrimitiveToken(v)).toList();
+  return values.map(parsePrimitiveToken).toList();
 }
 
 JsonPrimitive parsePrimitiveToken(String token) {
   final trimmed = trimSpaces(token);
+  return switch (trimmed) {
+    trueLiteral => true,
+    falseLiteral => false,
+    nullLiteral => null,
+    _ when trimmed.startsWith(doubleQuote) => parseStringLiteral(trimmed),
+    _ when isNumericLiteral(trimmed) => _parseNumber(trimmed),
+    _ => trimmed,
+  };
+}
 
-  if (trimmed.isEmpty) {
-    return '';
-  }
-
-  if (trimmed.startsWith(doubleQuote)) {
-    return parseStringLiteral(trimmed);
-  }
-
-  if (isBooleanOrNullLiteral(trimmed)) {
-    if (trimmed == trueLiteral) return true;
-    if (trimmed == falseLiteral) return false;
-    if (trimmed == nullLiteral) return null;
-  }
-
-  if (isNumericLiteral(trimmed)) {
-    final parsedNumber = double.parse(trimmed);
-    return parsedNumber == -0.0 ? 0 : parsedNumber;
-  }
-
-  return trimmed;
+num _parseNumber(String token) {
+  final parsedNumber = double.parse(token);
+  return parsedNumber == -0.0 ? 0 : parsedNumber;
 }
 
 String parseStringLiteral(String token) {
