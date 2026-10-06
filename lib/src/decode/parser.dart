@@ -36,6 +36,12 @@ ArrayHeaderParseResult? parseArrayHeaderLine(
     return null;
   }
 
+  // A header needs a colon, and its key can't contain one.
+  final firstColonIndex = findUnquotedChar(content, colon);
+  if (firstColonIndex == -1 || firstColonIndex < bracketStart) {
+    return null;
+  }
+
   final bracketEnd = findUnquotedChar(content, closeBracket, bracketStart);
   if (bracketEnd == -1) {
     return null;
@@ -293,12 +299,12 @@ KeyTokenResult parseKeyToken(String content, int start) {
 
 // #region Array content detection helpers
 
-bool isArrayHeaderAfterHyphen(String content) {
+bool isArrayHeaderContent(String content) {
   return content.trim().startsWith(openBracket) &&
       findUnquotedChar(content, colon) != -1;
 }
 
-bool isObjectFirstFieldAfterHyphen(String content) {
+bool isKeyValueContent(String content) {
   return findUnquotedChar(content, colon) != -1;
 }
 

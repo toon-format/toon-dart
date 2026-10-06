@@ -14,7 +14,7 @@ JsonValue decodeValueFromLines(LineCursor cursor, DecodeOptions options) {
     return <String, JsonValue>{};
   }
 
-  if (isArrayHeaderAfterHyphen(first.content)) {
+  if (isArrayHeaderContent(first.content)) {
     final headerInfo = parseArrayHeaderLine(first.content, defaultDelimiter);
     if (headerInfo != null) {
       cursor.advance();
@@ -28,24 +28,11 @@ JsonValue decodeValueFromLines(LineCursor cursor, DecodeOptions options) {
     }
   }
 
-  if (cursor.length == 1 && !isKeyValueLine(first)) {
+  if (cursor.length == 1 && !isKeyValueContent(first.content)) {
     return parsePrimitiveToken(trimSpaces(first.content));
   }
 
   return decodeObject(cursor, 0, options);
-}
-
-bool isKeyValueLine(ParsedLine line) {
-  final content = line.content;
-  if (content.startsWith('"')) {
-    final closingQuoteIndex = findClosingQuote(content, 0);
-    if (closingQuoteIndex == -1) {
-      return false;
-    }
-    return content.substring(closingQuoteIndex + 1).contains(colon);
-  } else {
-    return content.contains(colon);
-  }
 }
 
 // #endregion
@@ -339,7 +326,7 @@ JsonValue decodeListItem(
     return <String, JsonValue>{};
   }
 
-  if (isArrayHeaderAfterHyphen(afterHyphen)) {
+  if (isArrayHeaderContent(afterHyphen)) {
     final arrayHeader = parseArrayHeaderLine(afterHyphen, defaultDelimiter);
     if (arrayHeader != null) {
       return decodeArrayFromHeader(
@@ -352,7 +339,7 @@ JsonValue decodeListItem(
     }
   }
 
-  if (isObjectFirstFieldAfterHyphen(afterHyphen)) {
+  if (isKeyValueContent(afterHyphen)) {
     return decodeObjectFromListItem(line, cursor, baseDepth, options);
   }
 
@@ -376,8 +363,9 @@ JsonObject decodeObjectFromListItem(
       break;
     }
 
-    if (line.depth == result.followDepth &&
-        !line.content.startsWith(listItemPrefix)) {
+    // A hyphen marks a list item only at item depth, so a `- ` line here is a
+    // further field.
+    if (line.depth == result.followDepth) {
       final pair = decodeKeyValuePair(
         line,
         cursor,
