@@ -164,8 +164,10 @@ void decodeField(
   }
 
   if (arrayHeader != null && options.strict) {
-    throw const FormatException(
-      'Keyless array header is only valid at the document root or as a list item',
+    throw FormatException(
+      arrayHeader.header.keyed
+          ? 'Keyless keyed header is only valid at the document root'
+          : 'Keyless array header is only valid at the document root or as a list item',
     );
   }
 
@@ -199,13 +201,17 @@ void _assertNewKey(JsonObject obj, String key, bool strict) {
 
 // #region Array decoding
 
-JsonArray decodeArrayFromHeader(
+JsonValue decodeArrayFromHeader(
   ArrayHeaderInfo header,
   String? inlineValues,
   LineCursor cursor,
   int baseDepth,
   DecodeOptions options,
 ) {
+  if (header.keyed) {
+    return decodeKeyedObject(header, cursor, baseDepth, options);
+  }
+
   if (inlineValues != null) {
     return decodeInlinePrimitiveArray(header, inlineValues, options);
   }
@@ -362,6 +368,75 @@ List<JsonObject> decodeTabularArray(
   return objects;
 }
 
+JsonObject decodeKeyedObject(
+  ArrayHeaderInfo header,
+  LineCursor cursor,
+  int baseDepth,
+  DecodeOptions options,
+) {
+  final obj = <String, JsonValue>{};
+  final entryDepth = scopeContentDepth(cursor, baseDepth, options.strict);
+  final leafCount = countLeafFields(header.fields!);
+
+  int? startLine;
+  int? endLine;
+
+  // A keyed scope ends only by dedent or end of input, so every line at entry
+  // depth carrying an unquoted colon is an entry row.
+  while (!cursor.atEnd()) {
+    final line = cursor.peek()!;
+    if (line.depth <= baseDepth) {
+      break;
+    }
+
+    if (line.depth != entryDepth) {
+      skipOverIndentedLine(cursor, line, entryDepth, options.strict);
+      continue;
+    }
+
+    cursor.advance();
+    if (!isKeyValueContent(line.content)) {
+      if (options.strict) {
+        throw FormatException(
+          'Line ${line.lineNumber}: Expected entry row inside keyed tabular object',
+        );
+      }
+      continue;
+    }
+
+    startLine ??= line.lineNumber;
+    endLine = line.lineNumber;
+
+    final (:key, :end) = parseKeyToken(line.content, 0);
+    _assertNewKey(obj, key, options.strict);
+
+    final cells = trimSpaces(line.content.substring(end));
+    final values = cells.isEmpty
+        ? <String>[]
+        : parseDelimitedValues(cells, header.delimiter);
+    assertExpectedCount(values.length, leafCount, 'keyed entry cells', options);
+
+    obj[key] = objectFromFields(
+      header.fields!,
+      mapRowValuesToPrimitives(values),
+    );
+  }
+
+  assertExpectedCount(obj.length, header.length, 'keyed entries', options);
+
+  if (options.strict && startLine != null && endLine != null) {
+    validateNoBlankLinesInRange(
+      startLine,
+      endLine,
+      cursor.getBlankLines(),
+      options.strict,
+      'keyed tabular object',
+    );
+  }
+
+  return obj;
+}
+
 // #endregion
 
 // #region List item decoding
@@ -398,10 +473,12 @@ JsonValue decodeListItem(
 
   if (isArrayHeaderContent(afterHyphen)) {
     final arrayHeader = resolveArrayHeader(afterHyphen, options.strict);
-    // There is no keyless fields-bearing list-item form.
+    // There is no keyless keyed or fields-bearing list-item form.
     if (arrayHeader?.header.fields != null && options.strict) {
-      throw const FormatException(
-        'Keyless header with a field list is only valid at the document root',
+      throw FormatException(
+        arrayHeader!.header.keyed
+            ? 'Keyless keyed header is only valid at the document root'
+            : 'Keyless header with a field list is only valid at the document root',
       );
     }
     if (arrayHeader != null && arrayHeader.header.fields == null) {

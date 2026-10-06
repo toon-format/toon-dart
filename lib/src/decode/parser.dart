@@ -126,7 +126,7 @@ ArrayHeaderParseResult? parseArrayHeaderLine(
 
   final bracketContent = content.substring(bracketStart + 1, bracketEnd);
 
-  final (:length, :delimiter) = parseBracketSegment(
+  final (:length, :delimiter, :keyed) = parseBracketSegment(
     bracketContent,
     defaultDelimiter,
   );
@@ -148,6 +148,10 @@ ArrayHeaderParseResult? parseArrayHeaderLine(
     }
   }
 
+  if (keyed && fields == null) {
+    throw const FormatException('Keyed header requires a field list');
+  }
+
   // Decoding the values as an inline array would silently drop the fields.
   if (fields != null && afterColon.isNotEmpty) {
     throw const FormatException(
@@ -161,6 +165,7 @@ ArrayHeaderParseResult? parseArrayHeaderLine(
       length: length,
       delimiter: delimiter,
       fields: fields,
+      keyed: keyed,
     ),
     inlineValues: afterColon.isEmpty ? null : afterColon,
   );
@@ -168,7 +173,7 @@ ArrayHeaderParseResult? parseArrayHeaderLine(
 
 final _bracketLength = RegExp(r'^(?:0|[1-9]\d*)$');
 
-({int length, String delimiter}) parseBracketSegment(
+({int length, String delimiter, bool keyed}) parseBracketSegment(
   String segment,
   String defaultDelimiter,
 ) {
@@ -180,12 +185,23 @@ final _bracketLength = RegExp(r'^(?:0|[1-9]\d*)$');
     content = content.substring(0, content.length - 1);
   }
 
+  // Only a colon between the length and the delimiter symbol marks a keyed
+  // header; anywhere else it fails the length check below.
+  final keyed = content.endsWith(colon);
+  if (keyed) {
+    content = content.substring(0, content.length - 1);
+  }
+
   if (!_bracketLength.hasMatch(content)) {
     throw FormatException('Invalid array length: "$segment"');
   }
 
   // A length beyond the int range can never match a count.
-  return (length: int.tryParse(content) ?? -1, delimiter: delimiter);
+  return (
+    length: int.tryParse(content) ?? -1,
+    delimiter: delimiter,
+    keyed: keyed,
+  );
 }
 
 void _assertNoGap(String content, int start, int end, String target) {

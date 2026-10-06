@@ -49,11 +49,16 @@ class ArrayHeaderInfo {
   final String delimiter;
   final List<FieldNode>? fields;
 
+  /// Whether this is a keyed tabular header `[N:]`, which decodes to an object
+  /// of N entries.
+  final bool keyed;
+
   const ArrayHeaderInfo({
     this.key,
     required this.length,
     required this.delimiter,
     this.fields,
+    this.keyed = false,
   });
 }
 
