@@ -6,8 +6,6 @@ import 'parser.dart';
 import 'scanners.dart';
 import 'validation.dart';
 
-// #region Entry decoding
-
 JsonValue decodeValueFromLines(LineCursor cursor, DecodeOptions options) {
   var first = cursor.peek();
   while (first != null && first.depth != 0) {
@@ -107,10 +105,6 @@ void assertNotScalarLine(ParsedLine line) {
   }
 }
 
-// #endregion
-
-// #region Object decoding
-
 JsonObject decodeObject(
   LineCursor cursor,
   int baseDepth,
@@ -196,10 +190,6 @@ void _assertNewKey(JsonObject obj, String key, bool strict) {
     throw FormatException('Duplicate sibling key "$key"');
   }
 }
-
-// #endregion
-
-// #region Array decoding
 
 JsonValue decodeArrayFromHeader(
   ArrayHeaderInfo header,
@@ -437,10 +427,6 @@ JsonObject decodeKeyedObject(
   return obj;
 }
 
-// #endregion
-
-// #region List item decoding
-
 JsonValue decodeListItem(
   LineCursor cursor,
   int baseDepth,
@@ -531,10 +517,6 @@ JsonObject decodeObjectFromListItem(
   return obj;
 }
 
-// #endregion
-
-// #region Shared decoder helpers
-
 /// Builds a row object from [cells] in depth-first field order.
 JsonObject objectFromFields(List<FieldNode> fields, List<JsonPrimitive> cells) {
   var cellIndex = 0;
@@ -554,5 +536,3 @@ JsonObject objectFromFields(List<FieldNode> fields, List<JsonPrimitive> cells) {
 
   return walk(fields);
 }
-
-// #endregion

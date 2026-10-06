@@ -1,7 +1,5 @@
 import '../types.dart';
 
-// #region Normalization (unknown → JsonValue)
-
 JsonValue normalizeValue(Object? value) {
   if (value == null) {
     return null;
@@ -81,10 +79,6 @@ String _assertNoLoneSurrogate(String value) {
   return value;
 }
 
-// #endregion
-
-// #region Type guards
-
 bool isJsonPrimitive(Object? value) {
   return value == null || value is String || value is num || value is bool;
 }
@@ -97,10 +91,6 @@ bool isJsonObject(Object? value) {
   return value != null && value is Map<String, Object?>;
 }
 
-// #endregion
-
-// #region Array type detection
-
 bool isArrayOfPrimitives(JsonArray value) {
   return value.every((item) => isJsonPrimitive(item));
 }
@@ -112,5 +102,3 @@ bool isArrayOfArrays(JsonArray value) {
 bool isArrayOfObjects(JsonArray value) {
   return value.every((item) => isJsonObject(item));
 }
-
-// #endregion

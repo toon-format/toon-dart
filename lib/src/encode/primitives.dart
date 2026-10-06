@@ -3,8 +3,6 @@ import '../utilities/constants.dart';
 import '../utilities/string_utils.dart';
 import '../utilities/validation.dart';
 
-// #region Primitive encoding
-
 String encodePrimitive(JsonPrimitive value, [String? delimiter]) {
   if (value == null) {
     return nullLiteral;
@@ -32,10 +30,6 @@ String encodeStringLiteral(String value, [String delimiter = comma]) {
   return '$doubleQuote${escapeString(value)}$doubleQuote';
 }
 
-// #endregion
-
-// #region Key encoding
-
 String encodeKey(String key) {
   if (isValidUnquotedKey(key)) {
     return key;
@@ -44,20 +38,12 @@ String encodeKey(String key) {
   return '$doubleQuote${escapeString(key)}$doubleQuote';
 }
 
-// #endregion
-
-// #region Value joining
-
 String encodeAndJoinPrimitives(
   List<JsonPrimitive> values, [
   String delimiter = comma,
 ]) {
   return values.map((v) => encodePrimitive(v, delimiter)).join(delimiter);
 }
-
-// #endregion
-
-// #region Header formatters
 
 String formatHeader(
   int length, {
@@ -87,8 +73,6 @@ String formatHeader(
 
   return header;
 }
-
-// #endregion
 
 String _formatFieldSegment(List<FieldNode> fields, String delimiter) {
   return fields

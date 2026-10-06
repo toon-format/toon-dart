@@ -7,8 +7,6 @@ import 'primitives.dart';
 import 'tabular.dart';
 import 'writer.dart';
 
-// #region Encode normalized JsonValue
-
 String encodeValue(JsonValue value, EncodeOptions options) {
   // Unquoted, a leading U+FEFF would be read as the document's byte-order mark
   // and stripped on decode.
@@ -29,10 +27,6 @@ String encodeValue(JsonValue value, EncodeOptions options) {
 
   return writer.toString();
 }
-
-// #endregion
-
-// #region Object encoding
 
 void encodeObject(
   JsonObject value,
@@ -114,10 +108,6 @@ void writeKeyedEntryRows(
   }
 }
 
-// #endregion
-
-// #region Array encoding
-
 void encodeArray(
   String? key,
   JsonArray value,
@@ -173,10 +163,6 @@ void encodeArray(
   encodeMixedArrayAsListItems(key, value, writer, depth, options);
 }
 
-// #endregion
-
-// #region Array of arrays (expanded format)
-
 void encodeArrayOfArraysAsListItems(
   String? prefix,
   List<JsonArray> values,
@@ -212,10 +198,6 @@ String encodeInlineArrayLine(
   return '$header $joinedValue';
 }
 
-// #endregion
-
-// #region Array of objects (tabular format)
-
 void encodeArrayOfObjectsAsTabular(
   String? prefix,
   List<JsonObject> rows,
@@ -247,10 +229,6 @@ void writeTabularRows(
     writer.push(depth, encodeAndJoinPrimitives(leaves, options.delimiter));
   }
 }
-
-// #endregion
-
-// #region Array of objects (expanded format)
 
 void encodeMixedArrayAsListItems(
   String? prefix,
@@ -344,10 +322,6 @@ void encodeObjectAsListItem(
   }
 }
 
-// #endregion
-
-// #region List item encoding helpers
-
 void encodeListItemValue(
   JsonValue value,
   LineWriter writer,
@@ -372,5 +346,3 @@ void encodeListItemValue(
     encodeObjectAsListItem(value as JsonObject, writer, depth, options);
   }
 }
-
-// #endregion

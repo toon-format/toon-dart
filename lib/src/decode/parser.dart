@@ -3,8 +3,6 @@ import '../utilities/constants.dart';
 import '../utilities/literal_utils.dart';
 import '../utilities/string_utils.dart';
 
-// #region Array header parsing
-
 /// Parses [content] as an array header, or returns null when it is no header
 /// line. An invalid header throws in strict mode and falls through to a
 /// key-value line in non-strict mode.
@@ -213,8 +211,6 @@ void _assertNoGap(String content, int start, int end, String target) {
   }
 }
 
-// #endregion
-
 /// Parses a field list, descending into nested field groups
 /// (`field{sub1,sub2}`).
 List<FieldNode> parseFieldEntries(String content, String delimiter) {
@@ -309,10 +305,6 @@ int findMatchingBrace(String content, int braceStart) {
   return -1;
 }
 
-// #endregion
-
-// #region Delimited value parsing
-
 List<String> parseDelimitedValues(String input, String delimiter) {
   final values = <String>[];
   final current = StringBuffer();
@@ -357,10 +349,6 @@ List<String> parseDelimitedValues(String input, String delimiter) {
 List<JsonPrimitive> mapRowValuesToPrimitives(List<String> values) {
   return values.map((v) => parsePrimitiveToken(v)).toList();
 }
-
-// #endregion
-
-// #region Primitive and key parsing
 
 JsonPrimitive parsePrimitiveToken(String token) {
   final trimmed = trimSpaces(token);
@@ -451,10 +439,6 @@ String parseStringLiteral(String token) {
   }
 }
 
-// #endregion
-
-// #region Array content detection helpers
-
 bool isArrayHeaderContent(String content) {
   return content.trim().startsWith(openBracket) &&
       findUnquotedChar(content, colon) != -1;
@@ -463,5 +447,3 @@ bool isArrayHeaderContent(String content) {
 bool isKeyValueContent(String content) {
   return findUnquotedChar(content, colon) != -1;
 }
-
-// #endregion
