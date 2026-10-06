@@ -29,14 +29,14 @@ ArrayHeaderParseResult? parseArrayHeaderLine(
     final keyEndIndex = leadingWhitespace + closingQuoteIndex + 1;
     bracketStart = content.indexOf(openBracket, keyEndIndex);
   } else {
-    bracketStart = content.indexOf(openBracket);
+    bracketStart = findUnquotedChar(content, openBracket);
   }
 
   if (bracketStart == -1) {
     return null;
   }
 
-  final bracketEnd = content.indexOf(closeBracket, bracketStart);
+  final bracketEnd = findUnquotedChar(content, closeBracket, bracketStart);
   if (bracketEnd == -1) {
     return null;
   }
@@ -44,15 +44,17 @@ ArrayHeaderParseResult? parseArrayHeaderLine(
   int colonIndex = bracketEnd + 1;
   int braceEnd = colonIndex;
 
-  final braceStart = content.indexOf(openBrace, bracketEnd);
-  if (braceStart != -1 && braceStart < content.indexOf(colon, bracketEnd)) {
-    final foundBraceEnd = content.indexOf(closeBrace, braceStart);
+  final braceStart = findUnquotedChar(content, openBrace, bracketEnd);
+  if (braceStart != -1 &&
+      braceStart < findUnquotedChar(content, colon, bracketEnd)) {
+    final foundBraceEnd = findMatchingBrace(content, braceStart);
     if (foundBraceEnd != -1) {
       braceEnd = foundBraceEnd + 1;
     }
   }
 
-  colonIndex = content.indexOf(
+  colonIndex = findUnquotedChar(
+    content,
     colon,
     bracketEnd > braceEnd ? bracketEnd : braceEnd,
   );
@@ -82,7 +84,7 @@ ArrayHeaderParseResult? parseArrayHeaderLine(
 
   List<String>? fields;
   if (braceStart != -1 && braceStart < colonIndex) {
-    final foundBraceEnd = content.indexOf(closeBrace, braceStart);
+    final foundBraceEnd = findMatchingBrace(content, braceStart);
     if (foundBraceEnd != -1 && foundBraceEnd < colonIndex) {
       final fieldsContent = content.substring(braceStart + 1, foundBraceEnd);
       fields = parseDelimitedValues(
@@ -121,6 +123,28 @@ BracketSegmentResult parseBracketSegment(String seg, String defaultDelimiter) {
   }
 
   return BracketSegmentResult(length: length, delimiter: delimiter);
+}
+
+// #endregion
+
+/// Returns the index of the brace closing the one at [braceStart], ignoring
+/// braces inside quoted names, or -1.
+int findMatchingBrace(String content, int braceStart) {
+  var inQuotes = false;
+  var depth = 0;
+  for (var i = braceStart; i < content.length; i++) {
+    final char = content[i];
+    if (char == backslash && inQuotes) {
+      i++;
+    } else if (char == doubleQuote) {
+      inQuotes = !inQuotes;
+    } else if (!inQuotes && char == openBrace) {
+      depth++;
+    } else if (!inQuotes && char == closeBrace && --depth == 0) {
+      return i;
+    }
+  }
+  return -1;
 }
 
 // #endregion
@@ -223,20 +247,16 @@ String parseStringLiteral(String token) {
 }
 
 KeyTokenResult parseUnquotedKey(String content, int start) {
-  int end = start;
-  while (end < content.length && content[end] != colon) {
-    end++;
-  }
-
-  if (end >= content.length || content[end] != colon) {
+  // A raw scan would cut `a "b:c" d: 1` at the quoted colon.
+  final colonIndex = findUnquotedChar(content, colon, start);
+  if (colonIndex == -1) {
     throw const FormatException('Missing colon after key');
   }
 
-  final key = trimSpaces(content.substring(start, end));
-
-  end++;
-
-  return KeyTokenResult(key: key, end: end);
+  return KeyTokenResult(
+    key: trimSpaces(content.substring(start, colonIndex)),
+    end: colonIndex + 1,
+  );
 }
 
 KeyTokenResult parseQuotedKey(String content, int start) {
@@ -249,6 +269,9 @@ KeyTokenResult parseQuotedKey(String content, int start) {
   final keyContent = content.substring(start + 1, closingQuoteIndex);
   final key = unescapeString(keyContent);
   int end = closingQuoteIndex + 1;
+  while (end < content.length && content[end] == space) {
+    end++;
+  }
 
   if (end >= content.length || content[end] != colon) {
     throw const FormatException('Missing colon after key');
