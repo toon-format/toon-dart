@@ -11,6 +11,7 @@ const String comma = ',';
 const String colon = ':';
 const String space = ' ';
 const String pipe = '|';
+const String commentMarker = '#';
 
 // #endregion
 

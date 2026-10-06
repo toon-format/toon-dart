@@ -43,6 +43,10 @@ bool isSafeUnquoted(String value, [String delimiter = comma]) {
     return false;
   }
 
+  if (value.startsWith(commentMarker)) {
+    return false;
+  }
+
   return true;
 }
 
