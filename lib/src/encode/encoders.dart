@@ -126,22 +126,6 @@ void encodeArray(
     return;
   }
 
-  if (isArrayOfArrays(value)) {
-    final allPrimitiveArrays = value.every(
-      (arr) => isArrayOfPrimitives(arr as JsonArray),
-    );
-    if (allPrimitiveArrays) {
-      encodeArrayOfArraysAsListItems(
-        key,
-        value.cast<JsonArray>(),
-        writer,
-        depth,
-        options,
-      );
-      return;
-    }
-  }
-
   if (isArrayOfObjects(value)) {
     final objects = value.cast<JsonObject>();
     final fields = extractTabularFields(objects);
@@ -154,35 +138,11 @@ void encodeArray(
         depth,
         options,
       );
-    } else {
-      encodeMixedArrayAsListItems(key, value, writer, depth, options);
+      return;
     }
-    return;
   }
 
   encodeMixedArrayAsListItems(key, value, writer, depth, options);
-}
-
-void encodeArrayOfArraysAsListItems(
-  String? prefix,
-  List<JsonArray> values,
-  LineWriter writer,
-  int depth,
-  EncodeOptions options,
-) {
-  final header = formatHeader(
-    values.length,
-    key: prefix,
-    delimiter: options.delimiter,
-  );
-  writer.push(depth, header);
-
-  for (final arr in values) {
-    if (isArrayOfPrimitives(arr)) {
-      final inline = encodeInlineArrayLine(arr, options.delimiter, null);
-      writer.pushListItem(depth + 1, inline);
-    }
-  }
 }
 
 String encodeInlineArrayLine(

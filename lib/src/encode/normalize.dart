@@ -95,10 +95,6 @@ bool isArrayOfPrimitives(JsonArray value) {
   return value.every((item) => isJsonPrimitive(item));
 }
 
-bool isArrayOfArrays(JsonArray value) {
-  return value.every((item) => isJsonArray(item));
-}
-
 bool isArrayOfObjects(JsonArray value) {
   return value.every((item) => isJsonObject(item));
 }
