@@ -294,34 +294,24 @@ void encodeObjectAsListItem(
     } else if (isArrayOfPrimitives(arr)) {
       final formatted = encodeInlineArrayLine(arr, options.delimiter, firstKey);
       writer.pushListItem(depth, formatted);
-    } else if (isArrayOfObjects(arr)) {
-      final objects = arr.cast<JsonObject>();
-      final header = extractTabularHeader(objects);
-      if (header != null) {
-        final formattedHeader = formatHeader(
+    } else {
+      final objects = isArrayOfObjects(arr) ? arr.cast<JsonObject>() : null;
+      final fields = objects == null ? null : extractTabularHeader(objects);
+      if (fields != null) {
+        final header = formatHeader(
           arr.length,
           key: firstKey,
-          fields: header,
+          fields: fields,
           delimiter: options.delimiter,
         );
-        writer.pushListItem(depth, formattedHeader);
-        writeTabularRows(objects, header, writer, depth + 1, options);
+        writer.pushListItem(depth, header);
+        writeTabularRows(objects!, fields, writer, depth + 1, options);
       } else {
-        writer.pushListItem(depth, '$encodedKey[${arr.length}]:');
+        final header = formatHeader(arr.length, delimiter: options.delimiter);
+        writer.pushListItem(depth, '$encodedKey$header');
         for (final item in arr) {
-          encodeObjectAsListItem(
-            item as JsonObject,
-            writer,
-            depth + 1,
-            options,
-          );
+          encodeListItemValue(item, writer, depth + 1, options);
         }
-      }
-    } else {
-      writer.pushListItem(depth, '$encodedKey[${arr.length}]:');
-
-      for (final item in arr) {
-        encodeListItemValue(item, writer, depth + 1, options);
       }
     }
   } else if (isJsonObject(firstValue)) {
@@ -357,6 +347,12 @@ void encodeListItemValue(
     if (isArrayOfPrimitives(arr)) {
       final inline = encodeInlineArrayLine(arr, options.delimiter, null);
       writer.pushListItem(depth, inline);
+    } else {
+      final header = formatHeader(arr.length, delimiter: options.delimiter);
+      writer.pushListItem(depth, header);
+      for (final item in arr) {
+        encodeListItemValue(item, writer, depth + 1, options);
+      }
     }
   } else if (isJsonObject(value)) {
     encodeObjectAsListItem(value as JsonObject, writer, depth, options);
