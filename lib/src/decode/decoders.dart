@@ -112,9 +112,9 @@ JsonObject decodeObject(
 ) {
   final obj = <String, JsonValue>{};
 
-  // The first field sets the depth, which can sit deeper than `baseDepth` in
-  // nested structures.
-  int? computedDepth;
+  // The first field sets the depth, which non-strict mode lets sit deeper
+  // than `baseDepth`.
+  int? fieldDepth;
 
   while (!cursor.atEnd) {
     final line = cursor.peek()!;
@@ -122,14 +122,14 @@ JsonObject decodeObject(
       break;
     }
 
-    computedDepth ??= line.depth;
-    if (line.depth != computedDepth) {
-      skipOverIndentedLine(cursor, line, computedDepth, options.strict);
+    fieldDepth ??= line.depth;
+    if (line.depth != fieldDepth) {
+      skipOverIndentedLine(cursor, line, fieldDepth, options.strict);
       continue;
     }
 
     cursor.advance();
-    decodeField(line.content, cursor, computedDepth, options, obj);
+    decodeField(line.content, cursor, fieldDepth, options, obj);
   }
 
   return obj;
