@@ -22,8 +22,12 @@ void validateNoExtraListItems(
   if (cursor.atEnd()) return;
 
   final nextLine = cursor.peek();
-  if (nextLine != null && nextLine.depth == itemDepth && nextLine.content.startsWith(listItemPrefix)) {
-    throw RangeError('Expected $expectedCount list array items, but found more');
+  if (nextLine != null &&
+      nextLine.depth == itemDepth &&
+      nextLine.content.startsWith(listItemPrefix)) {
+    throw RangeError(
+      'Expected $expectedCount list array items, but found more',
+    );
   }
 }
 
@@ -54,9 +58,11 @@ void validateNoBlankLinesInRange(
 
   // Any blank line between the first and last item fails, whatever its
   // indentation.
-  final blanksInRange = blankLines.where(
-    (blank) => blank.lineNumber > startLine && blank.lineNumber < endLine,
-  ).toList();
+  final blanksInRange = blankLines
+      .where(
+        (blank) => blank.lineNumber > startLine && blank.lineNumber < endLine,
+      )
+      .toList();
 
   if (blanksInRange.isNotEmpty) {
     throw FormatException(

@@ -18,7 +18,13 @@ JsonValue decodeValueFromLines(LineCursor cursor, DecodeOptions options) {
     final headerInfo = parseArrayHeaderLine(first.content, defaultDelimiter);
     if (headerInfo != null) {
       cursor.advance();
-      return decodeArrayFromHeader(headerInfo.header, headerInfo.inlineValues, cursor, 0, options);
+      return decodeArrayFromHeader(
+        headerInfo.header,
+        headerInfo.inlineValues,
+        cursor,
+        0,
+        options,
+      );
     }
   }
 
@@ -46,7 +52,11 @@ bool isKeyValueLine(ParsedLine line) {
 
 // #region Object decoding
 
-JsonObject decodeObject(LineCursor cursor, int baseDepth, DecodeOptions options) {
+JsonObject decodeObject(
+  LineCursor cursor,
+  int baseDepth,
+  DecodeOptions options,
+) {
   final obj = <String, JsonValue>{};
 
   // The first field sets the depth, which can sit deeper than `baseDepth` in
@@ -82,7 +92,13 @@ KeyValueResult decodeKeyValue(
 ) {
   final arrayHeader = parseArrayHeaderLine(content, defaultDelimiter);
   if (arrayHeader != null && arrayHeader.header.key != null) {
-    final value = decodeArrayFromHeader(arrayHeader.header, arrayHeader.inlineValues, cursor, baseDepth, options);
+    final value = decodeArrayFromHeader(
+      arrayHeader.header,
+      arrayHeader.inlineValues,
+      cursor,
+      baseDepth,
+      options,
+    );
     return KeyValueResult(
       key: arrayHeader.header.key!,
       value: value,
@@ -97,13 +113,25 @@ KeyValueResult decodeKeyValue(
     final nextLine = cursor.peek();
     if (nextLine != null && nextLine.depth > baseDepth) {
       final nested = decodeObject(cursor, baseDepth + 1, options);
-      return KeyValueResult(key: keyToken.key, value: nested, followDepth: baseDepth + 1);
+      return KeyValueResult(
+        key: keyToken.key,
+        value: nested,
+        followDepth: baseDepth + 1,
+      );
     }
-    return KeyValueResult(key: keyToken.key, value: const <String, JsonValue>{}, followDepth: baseDepth + 1);
+    return KeyValueResult(
+      key: keyToken.key,
+      value: const <String, JsonValue>{},
+      followDepth: baseDepth + 1,
+    );
   }
 
   final value = parsePrimitiveToken(rest);
-  return KeyValueResult(key: keyToken.key, value: value, followDepth: baseDepth + 1);
+  return KeyValueResult(
+    key: keyToken.key,
+    value: value,
+    followDepth: baseDepth + 1,
+  );
 }
 
 KeyValuePairResult decodeKeyValuePair(
@@ -152,7 +180,12 @@ List<JsonPrimitive> decodeInlinePrimitiveArray(
   final values = parseDelimitedValues(inlineValues, header.delimiter);
   final primitives = mapRowValuesToPrimitives(values);
 
-  assertExpectedCount(primitives.length, header.length, 'inline array items', options);
+  assertExpectedCount(
+    primitives.length,
+    header.length,
+    'inline array items',
+    options,
+  );
 
   return primitives;
 }
@@ -175,7 +208,8 @@ List<JsonValue> decodeListArray(
       break;
     }
 
-    final isListItem = line.content.startsWith(listItemPrefix) || line.content == '-';
+    final isListItem =
+        line.content.startsWith(listItemPrefix) || line.content == '-';
 
     if (line.depth == itemDepth && isListItem) {
       if (startLine == null) {
@@ -238,7 +272,12 @@ List<JsonObject> decodeTabularArray(
 
       cursor.advance();
       final values = parseDelimitedValues(line.content, header.delimiter);
-      assertExpectedCount(values.length, header.fields!.length, 'tabular row values', options);
+      assertExpectedCount(
+        values.length,
+        header.fields!.length,
+        'tabular row values',
+        options,
+      );
 
       final primitives = mapRowValuesToPrimitives(values);
       final obj = <String, JsonValue>{};
@@ -303,7 +342,13 @@ JsonValue decodeListItem(
   if (isArrayHeaderAfterHyphen(afterHyphen)) {
     final arrayHeader = parseArrayHeaderLine(afterHyphen, defaultDelimiter);
     if (arrayHeader != null) {
-      return decodeArrayFromHeader(arrayHeader.header, arrayHeader.inlineValues, cursor, baseDepth, options);
+      return decodeArrayFromHeader(
+        arrayHeader.header,
+        arrayHeader.inlineValues,
+        cursor,
+        baseDepth,
+        options,
+      );
     }
   }
 
@@ -331,8 +376,14 @@ JsonObject decodeObjectFromListItem(
       break;
     }
 
-    if (line.depth == result.followDepth && !line.content.startsWith(listItemPrefix)) {
-      final pair = decodeKeyValuePair(line, cursor, result.followDepth, options);
+    if (line.depth == result.followDepth &&
+        !line.content.startsWith(listItemPrefix)) {
+      final pair = decodeKeyValuePair(
+        line,
+        cursor,
+        result.followDepth,
+        options,
+      );
       obj[pair.key] = pair.value;
     } else {
       break;

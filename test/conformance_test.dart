@@ -6,12 +6,13 @@ import 'package:toon_format/toon_format.dart';
 
 void main() {
   for (final category in const ['encode', 'decode']) {
-    final files = Directory('test/spec/tests/fixtures/$category')
-        .listSync()
-        .whereType<File>()
-        .where((f) => f.path.endsWith('.json'))
-        .toList()
-      ..sort((a, b) => a.path.compareTo(b.path));
+    final files =
+        Directory('test/spec/tests/fixtures/$category')
+            .listSync()
+            .whereType<File>()
+            .where((f) => f.path.endsWith('.json'))
+            .toList()
+          ..sort((a, b) => a.path.compareTo(b.path));
     final run = category == 'encode' ? _runEncode : _runDecode;
 
     group(category, () {
@@ -33,20 +34,26 @@ void main() {
 }
 
 void _runEncode(Map<String, dynamic> fixtureCase) {
-  final options =
-      _encodeOptions(fixtureCase['options'] as Map<String, dynamic>?);
+  final options = _encodeOptions(
+    fixtureCase['options'] as Map<String, dynamic>?,
+  );
   if (fixtureCase['shouldError'] == true) {
-    expect(() => encode(fixtureCase['input'], options: options),
-        throwsA(anything));
+    expect(
+      () => encode(fixtureCase['input'], options: options),
+      throwsA(anything),
+    );
     return;
   }
-  expect(encode(fixtureCase['input'], options: options),
-      equals(fixtureCase['expected']));
+  expect(
+    encode(fixtureCase['input'], options: options),
+    equals(fixtureCase['expected']),
+  );
 }
 
 void _runDecode(Map<String, dynamic> fixtureCase) {
-  final options =
-      _decodeOptions(fixtureCase['options'] as Map<String, dynamic>?);
+  final options = _decodeOptions(
+    fixtureCase['options'] as Map<String, dynamic>?,
+  );
   final input = fixtureCase['input'] as String;
   if (fixtureCase['shouldError'] == true) {
     expect(() => decode(input, options: options), throwsA(anything));
@@ -56,7 +63,8 @@ void _runDecode(Map<String, dynamic> fixtureCase) {
   expect(
     _jsonModelEquals(actual, fixtureCase['expected']),
     isTrue,
-    reason: 'expected ${jsonEncode(fixtureCase['expected'])}\n'
+    reason:
+        'expected ${jsonEncode(fixtureCase['expected'])}\n'
         '     got ${_safeJson(actual)}',
   );
 }

@@ -48,8 +48,10 @@ String encodeKey(String key) {
 
 // #region Value joining
 
-String encodeAndJoinPrimitives(List<JsonPrimitive> values,
-    [String delimiter = comma]) {
+String encodeAndJoinPrimitives(
+  List<JsonPrimitive> values, [
+  String delimiter = comma,
+]) {
   return values.map((v) => encodePrimitive(v, delimiter)).join(delimiter);
 }
 
@@ -71,8 +73,9 @@ String formatHeader(
     header += encodeKey(key);
   }
 
-  final delimiterSuffix =
-      delimiterValue != defaultDelimiter ? delimiterValue : '';
+  final delimiterSuffix = delimiterValue != defaultDelimiter
+      ? delimiterValue
+      : '';
   header += '[$length$delimiterSuffix]';
 
   if (fields != null) {

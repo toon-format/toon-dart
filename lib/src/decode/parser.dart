@@ -52,7 +52,10 @@ ArrayHeaderParseResult? parseArrayHeaderLine(
     }
   }
 
-  colonIndex = content.indexOf(colon, bracketEnd > braceEnd ? bracketEnd : braceEnd);
+  colonIndex = content.indexOf(
+    colon,
+    bracketEnd > braceEnd ? bracketEnd : braceEnd,
+  );
   if (colonIndex == -1) {
     return null;
   }
@@ -82,9 +85,10 @@ ArrayHeaderParseResult? parseArrayHeaderLine(
     final foundBraceEnd = content.indexOf(closeBrace, braceStart);
     if (foundBraceEnd != -1 && foundBraceEnd < colonIndex) {
       final fieldsContent = content.substring(braceStart + 1, foundBraceEnd);
-      fields = parseDelimitedValues(fieldsContent, delimiter)
-          .map((field) => parseStringLiteral(field.trim()))
-          .toList();
+      fields = parseDelimitedValues(
+        fieldsContent,
+        delimiter,
+      ).map((field) => parseStringLiteral(field.trim())).toList();
     }
   }
 
@@ -99,10 +103,7 @@ ArrayHeaderParseResult? parseArrayHeaderLine(
   );
 }
 
-BracketSegmentResult parseBracketSegment(
-  String seg,
-  String defaultDelimiter,
-) {
+BracketSegmentResult parseBracketSegment(String seg, String defaultDelimiter) {
   String content = seg;
 
   String delimiter = defaultDelimiter;
@@ -119,10 +120,7 @@ BracketSegmentResult parseBracketSegment(
     throw FormatException('Invalid array length: $seg');
   }
 
-  return BracketSegmentResult(
-    length: length,
-    delimiter: delimiter,
-  );
+  return BracketSegmentResult(length: length, delimiter: delimiter);
 }
 
 // #endregion
@@ -273,7 +271,8 @@ KeyTokenResult parseKeyToken(String content, int start) {
 // #region Array content detection helpers
 
 bool isArrayHeaderAfterHyphen(String content) {
-  return content.trim().startsWith(openBracket) && findUnquotedChar(content, colon) != -1;
+  return content.trim().startsWith(openBracket) &&
+      findUnquotedChar(content, colon) != -1;
 }
 
 bool isObjectFirstFieldAfterHyphen(String content) {

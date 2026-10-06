@@ -16,7 +16,9 @@ String unescapeString(String value) {
   while (i < value.length) {
     if (value[i] == backslash) {
       if (i + 1 >= value.length) {
-        throw FormatException('Invalid escape sequence: backslash at end of string');
+        throw FormatException(
+          'Invalid escape sequence: backslash at end of string',
+        );
       }
 
       final next = value[i + 1];

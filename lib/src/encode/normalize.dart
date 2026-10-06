@@ -59,10 +59,7 @@ JsonValue normalizeValue(Object? value) {
 // #region Type guards
 
 bool isJsonPrimitive(Object? value) {
-  return value == null ||
-      value is String ||
-      value is num ||
-      value is bool;
+  return value == null || value is String || value is num || value is bool;
 }
 
 bool isJsonArray(Object? value) {

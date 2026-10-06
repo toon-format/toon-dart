@@ -52,30 +52,21 @@ class ArrayHeaderParseResult {
   final ArrayHeaderInfo header;
   final String? inlineValues;
 
-  const ArrayHeaderParseResult({
-    required this.header,
-    this.inlineValues,
-  });
+  const ArrayHeaderParseResult({required this.header, this.inlineValues});
 }
 
 class BracketSegmentResult {
   final int length;
   final String delimiter;
 
-  const BracketSegmentResult({
-    required this.length,
-    required this.delimiter,
-  });
+  const BracketSegmentResult({required this.length, required this.delimiter});
 }
 
 class KeyTokenResult {
   final String key;
   final int end;
 
-  const KeyTokenResult({
-    required this.key,
-    required this.end,
-  });
+  const KeyTokenResult({required this.key, required this.end});
 }
 
 class KeyValueResult {
@@ -94,9 +85,5 @@ class KeyValuePairResult {
   final String key;
   final JsonValue value;
 
-  const KeyValuePairResult({
-    required this.key,
-    required this.value,
-  });
+  const KeyValuePairResult({required this.key, required this.value});
 }
-

@@ -5,10 +5,7 @@ class ScanResult {
   final List<ParsedLine> lines;
   final List<BlankLineInfo> blankLines;
 
-  const ScanResult({
-    required this.lines,
-    required this.blankLines,
-  });
+  const ScanResult({required this.lines, required this.blankLines});
 }
 
 class LineCursor {
@@ -17,8 +14,8 @@ class LineCursor {
   final List<BlankLineInfo> _blankLines;
 
   LineCursor(this._lines, [List<BlankLineInfo>? blankLines])
-      : _index = 0,
-        _blankLines = blankLines ?? [];
+    : _index = 0,
+      _blankLines = blankLines ?? [];
 
   List<BlankLineInfo> getBlankLines() {
     return _blankLines;
@@ -70,7 +67,9 @@ ScanResult toParsedLines(String source, int indentSize, bool strict) {
 
     if (content.trim().isEmpty) {
       final depth = computeDepthFromIndent(indent, indentSize);
-      blankLines.add(BlankLineInfo(lineNumber: lineNumber, indent: indent, depth: depth));
+      blankLines.add(
+        BlankLineInfo(lineNumber: lineNumber, indent: indent, depth: depth),
+      );
       continue;
     }
 
@@ -83,21 +82,27 @@ ScanResult toParsedLines(String source, int indentSize, bool strict) {
       }
 
       if (raw.substring(0, wsEnd).contains(tab)) {
-        throw FormatException('Line $lineNumber: Tabs are not allowed in indentation in strict mode');
+        throw FormatException(
+          'Line $lineNumber: Tabs are not allowed in indentation in strict mode',
+        );
       }
 
       if (indent > 0 && indent % indentSize != 0) {
-        throw FormatException('Line $lineNumber: Indentation must be exact multiple of $indentSize, but found $indent spaces');
+        throw FormatException(
+          'Line $lineNumber: Indentation must be exact multiple of $indentSize, but found $indent spaces',
+        );
       }
     }
 
-    parsed.add(ParsedLine(
-      raw: raw,
-      indent: indent,
-      content: content,
-      depth: depth,
-      lineNumber: lineNumber,
-    ));
+    parsed.add(
+      ParsedLine(
+        raw: raw,
+        indent: indent,
+        content: content,
+        depth: depth,
+        lineNumber: lineNumber,
+      ),
+    );
   }
 
   return ScanResult(lines: parsed, blankLines: blankLines);
