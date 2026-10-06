@@ -65,7 +65,7 @@ void _runDecode(Map<String, dynamic> fixtureCase) {
     isTrue,
     reason:
         'expected ${jsonEncode(fixtureCase['expected'])}\n'
-        '     got ${_safeJson(actual)}',
+        '     got ${jsonEncode(actual)}',
   );
 }
 
@@ -109,12 +109,4 @@ bool _jsonModelEquals(Object? a, Object? b) {
     return true;
   }
   return false;
-}
-
-String _safeJson(Object? value) {
-  try {
-    return jsonEncode(value);
-  } catch (_) {
-    return '$value';
-  }
 }
