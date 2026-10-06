@@ -291,7 +291,9 @@ List<JsonObject> decodeTabularArray(
   DecodeOptions options,
 ) {
   final objects = <JsonObject>[];
+  final fields = header.fields!;
   final rowDepth = scopeContentDepth(cursor, baseDepth, options.strict);
+  final leafCount = countLeafFields(fields);
 
   int? startLine;
   int? endLine;
@@ -319,16 +321,11 @@ List<JsonObject> decodeTabularArray(
     final values = parseDelimitedValues(line.content, header.delimiter);
     assertExpectedCount(
       values.length,
-      countLeafFields(header.fields!),
+      leafCount,
       'tabular row values',
       options,
     );
-
-    final obj = objectFromFields(
-      header.fields!,
-      mapRowValuesToPrimitives(values),
-    );
-    objects.add(obj);
+    objects.add(objectFromFields(fields, mapRowValuesToPrimitives(values)));
   }
 
   assertExpectedCount(objects.length, header.length, 'tabular rows', options);
@@ -355,8 +352,9 @@ JsonObject decodeKeyedObject(
   DecodeOptions options,
 ) {
   final obj = <String, JsonValue>{};
+  final fields = header.fields!;
   final entryDepth = scopeContentDepth(cursor, baseDepth, options.strict);
-  final leafCount = countLeafFields(header.fields!);
+  final leafCount = countLeafFields(fields);
 
   int? startLine;
   int? endLine;
@@ -390,16 +388,12 @@ JsonObject decodeKeyedObject(
     final (:key, :end) = parseKeyToken(line.content);
     _assertNewKey(obj, key, options.strict);
 
-    final cells = trimSpaces(line.content.substring(end));
-    final values = cells.isEmpty
-        ? <String>[]
-        : parseDelimitedValues(cells, header.delimiter);
-    assertExpectedCount(values.length, leafCount, 'keyed entry cells', options);
-
-    obj[key] = objectFromFields(
-      header.fields!,
-      mapRowValuesToPrimitives(values),
+    final values = parseDelimitedValues(
+      trimSpaces(line.content.substring(end)),
+      header.delimiter,
     );
+    assertExpectedCount(values.length, leafCount, 'keyed entry cells', options);
+    obj[key] = objectFromFields(fields, mapRowValuesToPrimitives(values));
   }
 
   assertExpectedCount(obj.length, header.length, 'keyed entries', options);
