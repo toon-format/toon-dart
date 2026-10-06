@@ -6,7 +6,12 @@ String escapeString(String value) {
       .replaceAll(doubleQuote, '$backslash$doubleQuote')
       .replaceAll(newline, '${backslash}n')
       .replaceAll(carriageReturn, '${backslash}r')
-      .replaceAll(tab, '${backslash}t');
+      .replaceAll(tab, '${backslash}t')
+      .replaceAllMapped(
+        RegExp(r'[\x00-\x1F]'),
+        (m) =>
+            '${backslash}u${m[0]!.codeUnitAt(0).toRadixString(16).padLeft(4, '0')}',
+      );
 }
 
 String unescapeString(String value) {

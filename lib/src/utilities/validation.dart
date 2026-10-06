@@ -33,7 +33,7 @@ bool isSafeUnquoted(String value, [String delimiter = comma]) {
     return false;
   }
 
-  if (RegExp(r'[\n\r\t]').hasMatch(value)) {
+  if (RegExp(r'[\x00-\x1F]').hasMatch(value)) {
     return false;
   }
 
