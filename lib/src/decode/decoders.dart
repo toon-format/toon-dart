@@ -120,6 +120,12 @@ void decodeField(
     return;
   }
 
+  if (arrayHeader != null && options.strict) {
+    throw const FormatException(
+      'Keyless array header is only valid at the document root or as a list item',
+    );
+  }
+
   final (:key, :end) = parseKeyToken(content, 0);
   final rest = trimSpaces(content.substring(end));
   _assertNewKey(obj, key, options.strict);
@@ -340,7 +346,13 @@ JsonValue decodeListItem(
 
   if (isArrayHeaderContent(afterHyphen)) {
     final arrayHeader = resolveArrayHeader(afterHyphen, options.strict);
-    if (arrayHeader != null) {
+    // There is no keyless fields-bearing list-item form.
+    if (arrayHeader?.header.fields != null && options.strict) {
+      throw const FormatException(
+        'Keyless header with a field list is only valid at the document root',
+      );
+    }
+    if (arrayHeader != null && arrayHeader.header.fields == null) {
       return decodeArrayFromHeader(
         arrayHeader.header,
         arrayHeader.inlineValues,
