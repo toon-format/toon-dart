@@ -64,6 +64,7 @@ String formatHeader(
   String? key,
   List<FieldNode>? fields,
   String? delimiter,
+  bool keyed = false,
 }) {
   final delimiterValue = delimiter ?? comma;
 
@@ -76,7 +77,7 @@ String formatHeader(
   final delimiterSuffix = delimiterValue != defaultDelimiter
       ? delimiterValue
       : '';
-  header += '[$length$delimiterSuffix]';
+  header += '[$length${keyed ? colon : ''}$delimiterSuffix]';
 
   if (fields != null) {
     header += '{${_formatFieldSegment(fields, delimiterValue)}}';

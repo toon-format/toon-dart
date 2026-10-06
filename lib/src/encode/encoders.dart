@@ -24,7 +24,7 @@ String encodeValue(JsonValue value, EncodeOptions options) {
   if (isJsonArray(value)) {
     encodeArray(null, value as JsonArray, writer, 0, options);
   } else if (isJsonObject(value)) {
-    encodeObject(value as JsonObject, writer, 0, options);
+    encodeObjectValue(null, value as JsonObject, writer, 0, options);
   }
 
   return writer.toString();
@@ -64,13 +64,53 @@ void encodeKeyValuePair(
   } else if (isJsonArray(value)) {
     encodeArray(key, value as JsonArray, writer, depth, options);
   } else if (isJsonObject(value)) {
-    final nestedKeys = (value as JsonObject).keys.toList();
-    if (nestedKeys.isEmpty) {
-      writer.push(depth, '$encodedKey:');
-    } else {
-      writer.push(depth, '$encodedKey:');
-      encodeObject(value, writer, depth + 1, options);
-    }
+    encodeObjectValue(key, value as JsonObject, writer, depth, options);
+  }
+}
+
+/// Encodes an object value under [key], or at the root when [key] is null.
+void encodeObjectValue(
+  String? key,
+  JsonObject value,
+  LineWriter writer,
+  int depth,
+  EncodeOptions options,
+) {
+  final keyedFields = extractKeyedTabularFields(value);
+  if (keyedFields != null) {
+    final header = formatHeader(
+      value.length,
+      key: key,
+      fields: keyedFields,
+      delimiter: options.delimiter,
+      keyed: true,
+    );
+    writer.push(depth, header);
+    writeKeyedEntryRows(value, keyedFields, writer, depth + 1, options);
+    return;
+  }
+
+  if (key == null) {
+    encodeObject(value, writer, depth, options);
+    return;
+  }
+  writer.push(depth, '${encodeKey(key)}:');
+  encodeObject(value, writer, depth + 1, options);
+}
+
+void writeKeyedEntryRows(
+  JsonObject value,
+  List<FieldNode> fields,
+  LineWriter writer,
+  int depth,
+  EncodeOptions options,
+) {
+  for (final MapEntry(:key, value: entry) in value.entries) {
+    final leaves = collectRowLeaves(entry as JsonObject, fields);
+    writer.push(
+      depth,
+      '${encodeKey(key)}: ${encodeAndJoinPrimitives(leaves, options.delimiter)}',
+    );
   }
 }
 
@@ -280,12 +320,21 @@ void encodeObjectAsListItem(
       }
     }
   } else if (isJsonObject(firstValue)) {
-    final nestedKeys = (firstValue as JsonObject).keys.toList();
-    if (nestedKeys.isEmpty) {
-      writer.pushListItem(depth, '$encodedKey:');
+    final nested = firstValue as JsonObject;
+    final keyedFields = extractKeyedTabularFields(nested);
+    if (keyedFields != null) {
+      final header = formatHeader(
+        nested.length,
+        key: firstKey,
+        fields: keyedFields,
+        delimiter: options.delimiter,
+        keyed: true,
+      );
+      writer.pushListItem(depth, header);
+      writeKeyedEntryRows(nested, keyedFields, writer, depth + 2, options);
     } else {
       writer.pushListItem(depth, '$encodedKey:');
-      encodeObject(firstValue, writer, depth + 2, options);
+      encodeObject(nested, writer, depth + 2, options);
     }
   }
 

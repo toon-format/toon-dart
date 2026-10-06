@@ -24,6 +24,16 @@ List<FieldNode>? extractTabularFields(List<JsonObject> rows) {
   return fields;
 }
 
+/// Returns the keyed tabular field list of an object whose values are at least
+/// two uniform non-empty objects, or null.
+List<FieldNode>? extractKeyedTabularFields(JsonObject value) {
+  if (value.length < 2) return null;
+  if (!value.values.every((entry) => entry is JsonObject && entry.isNotEmpty)) {
+    return null;
+  }
+  return extractTabularFields(value.values.cast<JsonObject>().toList());
+}
+
 /// Reads one row's leaf cells in the order of [fields].
 List<JsonPrimitive> collectRowLeaves(JsonObject row, List<FieldNode> fields) {
   return [
