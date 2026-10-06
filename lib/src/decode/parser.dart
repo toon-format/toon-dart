@@ -148,6 +148,13 @@ ArrayHeaderParseResult? parseArrayHeaderLine(
     }
   }
 
+  // Decoding the values as an inline array would silently drop the fields.
+  if (fields != null && afterColon.isNotEmpty) {
+    throw const FormatException(
+      'Unexpected content after fields-bearing header colon',
+    );
+  }
+
   return ArrayHeaderParseResult(
     header: ArrayHeaderInfo(
       key: key,
