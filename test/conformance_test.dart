@@ -85,8 +85,8 @@ DecodeOptions? _decodeOptions(Map<String, dynamic>? fixtureOptions) {
   );
 }
 
-/// JSON-model equality per spec §2: ordered keys, exact strings,
-/// mathematical number equality.
+/// JSON-model equality: ordered keys, exact strings, and numbers compared by
+/// value, so the decoded `1.0` matches the expected `1`.
 bool _jsonModelEquals(Object? a, Object? b) {
   if (a is num && b is num) return a == b;
   if (a is String || b is String) return a == b;
