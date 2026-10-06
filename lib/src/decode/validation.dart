@@ -40,14 +40,5 @@ void validateNoBlankLinesInRange(
 bool isDataRow(String content, String delimiter) {
   final colonPos = findUnquotedChar(content, colon);
   final delimiterPos = findUnquotedChar(content, delimiter);
-
-  if (colonPos == -1) {
-    return true;
-  }
-
-  if (delimiterPos != -1 && delimiterPos < colonPos) {
-    return true;
-  }
-
-  return false;
+  return colonPos == -1 || (delimiterPos != -1 && delimiterPos < colonPos);
 }
