@@ -28,13 +28,15 @@ JsonValue decodeValueFromLines(LineCursor cursor, DecodeOptions options) {
     final headerInfo = resolveArrayHeader(first.content, options.strict);
     if (headerInfo != null) {
       cursor.advance();
-      return decodeArrayFromHeader(
+      final array = decodeArrayFromHeader(
         headerInfo.header,
         headerInfo.inlineValues,
         cursor,
         0,
         options,
       );
+      assertFullyConsumed(cursor, options.strict);
+      return array;
     }
   }
 
@@ -66,6 +68,7 @@ void skipOverIndentedLine(
       'Line ${line.lineNumber}: Over-indented line: expected depth $contentDepth, but found ${line.depth}',
     );
   }
+  assertNotScalarLine(line);
   cursor.advance();
 }
 
@@ -312,6 +315,10 @@ List<JsonObject> decodeTabularArray(
     if (line.depth != rowDepth) {
       skipOverIndentedLine(cursor, line, rowDepth, options.strict);
       continue;
+    }
+
+    if (!isDataRow(line.content, header.delimiter)) {
+      break;
     }
 
     startLine ??= line.lineNumber;

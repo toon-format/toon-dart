@@ -1,6 +1,7 @@
 import '../options.dart';
 import '../types.dart';
 import '../utilities/constants.dart';
+import '../utilities/string_utils.dart';
 import 'scanners.dart';
 
 void assertExpectedCount(
@@ -74,8 +75,8 @@ void validateNoBlankLinesInRange(
 /// Tells a tabular row from a key-value line: a row has no colon, or a
 /// delimiter before its first colon.
 bool isDataRow(String content, String delimiter) {
-  final colonPos = content.indexOf(colon);
-  final delimiterPos = content.indexOf(delimiter);
+  final colonPos = findUnquotedChar(content, colon);
+  final delimiterPos = findUnquotedChar(content, delimiter);
 
   if (colonPos == -1) {
     return true;
