@@ -1,4 +1,4 @@
-import '../utilities/constants.dart';
+import 'constants.dart';
 
 final _numericLiteral = RegExp(
   r'^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:e[+-]?\d+)?$',

@@ -1,4 +1,4 @@
-import '../utilities/constants.dart';
+import 'constants.dart';
 
 /// Trims surrounding U+0020 spaces only: other whitespace, such as NBSP or a
 /// tab outside its delimiter role, belongs to the token.
