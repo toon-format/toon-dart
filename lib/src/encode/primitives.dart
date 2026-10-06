@@ -4,38 +4,30 @@ import '../utilities/string_utils.dart';
 import '../utilities/validation.dart';
 
 String encodePrimitive(JsonPrimitive value, String delimiter) {
-  if (value == null) {
-    return nullLiteral;
-  }
+  return switch (value) {
+    String() => encodeStringLiteral(value, delimiter),
+    num() => _encodeNumber(value),
+    _ => '$value', // null, true, or false
+  };
+}
 
-  if (value is bool) {
-    return value.toString();
-  }
-
-  if (value is num) {
-    // Dart prints the shortest round-trip digits, with a `.0` suffix on
-    // integral doubles.
-    final text = value.toString();
-    return text.endsWith('.0') ? text.substring(0, text.length - 2) : text;
-  }
-
-  return encodeStringLiteral(value as String, delimiter);
+String _encodeNumber(num value) {
+  // Dart prints the shortest round-trip digits, with a `.0` suffix on
+  // integral doubles.
+  final text = '$value';
+  return text.endsWith('.0') ? text.substring(0, text.length - 2) : text;
 }
 
 String encodeStringLiteral(String value, String delimiter) {
-  if (isSafeUnquoted(value, delimiter)) {
-    return value;
-  }
-
-  return '$doubleQuote${escapeString(value)}$doubleQuote';
+  return isSafeUnquoted(value, delimiter) ? value : quoteString(value);
 }
 
 String encodeKey(String key) {
-  if (isValidUnquotedKey(key)) {
-    return key;
-  }
+  return isValidUnquotedKey(key) ? key : quoteString(key);
+}
 
-  return '$doubleQuote${escapeString(key)}$doubleQuote';
+String quoteString(String value) {
+  return '$doubleQuote${escapeString(value)}$doubleQuote';
 }
 
 String encodeAndJoinPrimitives(List<JsonPrimitive> values, String delimiter) {
@@ -49,32 +41,20 @@ String formatHeader(
   required String delimiter,
   bool keyed = false,
 }) {
-  String header = '';
-
-  if (key != null) {
-    header += encodeKey(key);
-  }
-
-  final delimiterSuffix = delimiter != defaultDelimiter ? delimiter : '';
-  header += '[$length${keyed ? colon : ''}$delimiterSuffix]';
-
-  if (fields != null) {
-    header += '{${_formatFieldSegment(fields, delimiter)}}';
-  }
-
-  header += ':';
-
-  return header;
+  final encodedKey = key == null ? '' : encodeKey(key);
+  final keyedMarker = keyed ? colon : '';
+  final delimiterSuffix = delimiter == defaultDelimiter ? '' : delimiter;
+  final fieldGroup = fields == null ? '' : _formatFieldGroup(fields, delimiter);
+  return '$encodedKey[$length$keyedMarker$delimiterSuffix]$fieldGroup:';
 }
 
-String _formatFieldSegment(List<FieldNode> fields, String delimiter) {
-  return fields
-      .map(
-        (field) =>
-            encodeKey(field.name) +
-            (field.children == null
-                ? ''
-                : '{${_formatFieldSegment(field.children!, delimiter)}}'),
-      )
-      .join(delimiter);
+String _formatFieldGroup(List<FieldNode> fields, String delimiter) {
+  final entries = [
+    for (final field in fields)
+      if (field.children case final children?)
+        '${encodeKey(field.name)}${_formatFieldGroup(children, delimiter)}'
+      else
+        encodeKey(field.name),
+  ];
+  return '{${entries.join(delimiter)}}';
 }
