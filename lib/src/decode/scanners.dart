@@ -79,6 +79,13 @@ ScanResult toParsedLines(String source, int indentSize, bool strict) {
         ? 0
         : tab.allMatches(leadingWhitespace).length;
     final content = _trimTrailingSpaces(raw.substring(indent));
+
+    // Only spaces may precede the comment marker. Comment lines vanish before
+    // blank-line tracking and strict validation.
+    if (firstTabIndex == -1 && content.startsWith(commentMarker)) {
+      continue;
+    }
+
     final depth = (indent - tabIndent) ~/ indentSize + tabIndent;
 
     if (content.isEmpty) {
