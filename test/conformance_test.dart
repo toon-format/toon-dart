@@ -73,7 +73,9 @@ EncodeOptions? _encodeOptions(Map<String, dynamic>? fixtureOptions) {
   if (fixtureOptions == null) return null;
   return EncodeOptions(
     indentSize: (fixtureOptions['indentSize'] ?? 2) as int,
-    delimiter: (fixtureOptions['delimiter'] ?? ',') as String,
+    delimiter: Delimiter.values.firstWhere(
+      (d) => d.symbol == (fixtureOptions['delimiter'] ?? ','),
+    ),
   );
 }
 

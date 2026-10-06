@@ -1,17 +1,24 @@
+/// Delimiter for inline arrays and tabular rows.
+enum Delimiter {
+  comma(','),
+  tab('\t'),
+  pipe('|');
+
+  const Delimiter(this.symbol);
+
+  final String symbol;
+}
+
 /// Options for `encode`.
 class EncodeOptions {
   /// Spaces per indentation level.
   final int indentSize;
 
-  /// Delimiter for inline arrays and tabular rows: `','`, `'\t'`, or `'|'`.
-  final String delimiter;
+  /// Delimiter for inline arrays and tabular rows.
+  final Delimiter delimiter;
 
-  const EncodeOptions({this.indentSize = 2, this.delimiter = ','})
-    : assert(indentSize > 0, 'indentSize must be positive'),
-      assert(
-        delimiter == ',' || delimiter == '\t' || delimiter == '|',
-        "delimiter must be ',', '\\t', or '|'",
-      );
+  const EncodeOptions({this.indentSize = 2, this.delimiter = Delimiter.comma})
+    : assert(indentSize > 0, 'indentSize must be positive');
 }
 
 /// Options for `decode`.

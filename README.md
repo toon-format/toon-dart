@@ -35,12 +35,12 @@ void main() {
 }
 ```
 
-Pass `EncodeOptions` to `encode` and `DecodeOptions` to `decode`, e.g. `encode(data, options: const EncodeOptions(delimiter: '|'))`:
+Pass `EncodeOptions` to `encode` and `DecodeOptions` to `decode`, e.g. `encode(data, options: const EncodeOptions(delimiter: Delimiter.pipe))`:
 
 | Option | Default | Description |
 | ------ | ------- | ----------- |
 | `EncodeOptions.indentSize` | `2` | Spaces per indentation level |
-| `EncodeOptions.delimiter` | `','` | Delimiter for inline arrays and tabular rows: `','`, `'\t'`, or `'\|'` |
+| `EncodeOptions.delimiter` | `Delimiter.comma` | Delimiter for inline arrays and tabular rows: `Delimiter.comma`, `Delimiter.tab`, or `Delimiter.pipe` |
 | `DecodeOptions.indentSize` | `2` | Expected spaces per indentation level |
 | `DecodeOptions.strict` | `true` | Enforces the spec's strict-mode errors, such as count mismatches, duplicate keys, or tab indentation |
 

@@ -12,7 +12,7 @@ String encodeValue(JsonValue value, EncodeOptions options) {
     // mark and stripped on decode.
     return value is String && value.startsWith(byteOrderMark)
         ? quoteString(value)
-        : encodePrimitive(value, options.delimiter);
+        : encodePrimitive(value, options.delimiter.symbol);
   }
 
   final writer = LineWriter(options.indentSize);
@@ -51,7 +51,7 @@ void encodeKeyValuePair(
     default:
       writer.push(
         depth,
-        '${encodeKey(key)}: ${encodePrimitive(value, options.delimiter)}',
+        '${encodeKey(key)}: ${encodePrimitive(value, options.delimiter.symbol)}',
       );
   }
 }
@@ -70,7 +70,7 @@ void encodeObjectValue(
       value.length,
       key: key,
       fields: keyedFields,
-      delimiter: options.delimiter,
+      delimiter: options.delimiter.symbol,
       keyed: true,
     );
     writer.push(depth, header);
@@ -97,7 +97,7 @@ void writeKeyedEntryRows(
     final leaves = collectRowLeaves(entry as JsonObject, fields);
     writer.push(
       depth,
-      '${encodeKey(key)}: ${encodeAndJoinPrimitives(leaves, options.delimiter)}',
+      '${encodeKey(key)}: ${encodeAndJoinPrimitives(leaves, options.delimiter.symbol)}',
     );
   }
 }
@@ -115,7 +115,10 @@ void encodeArray(
   }
 
   if (isArrayOfPrimitives(value)) {
-    writer.push(depth, encodeInlineArrayLine(value, options.delimiter, key));
+    writer.push(
+      depth,
+      encodeInlineArrayLine(value, options.delimiter.symbol, key),
+    );
     return;
   }
 
@@ -155,7 +158,7 @@ void encodeArrayOfObjectsAsTabular(
     rows.length,
     key: key,
     fields: fields,
-    delimiter: options.delimiter,
+    delimiter: options.delimiter.symbol,
   );
   writer.push(depth, header);
   writeTabularRows(rows, fields, writer, depth + 1, options);
@@ -170,7 +173,10 @@ void writeTabularRows(
 ) {
   for (final row in rows) {
     final leaves = collectRowLeaves(row, fields);
-    writer.push(depth, encodeAndJoinPrimitives(leaves, options.delimiter));
+    writer.push(
+      depth,
+      encodeAndJoinPrimitives(leaves, options.delimiter.symbol),
+    );
   }
 }
 
@@ -184,7 +190,7 @@ void encodeMixedArrayAsListItems(
   final header = formatHeader(
     items.length,
     key: key,
-    delimiter: options.delimiter,
+    delimiter: options.delimiter.symbol,
   );
   writer.push(depth, header);
   for (final item in items) {
@@ -202,12 +208,12 @@ void encodeListItemValue(
     case JsonArray() when isArrayOfPrimitives(value):
       writer.pushListItem(
         depth,
-        encodeInlineArrayLine(value, options.delimiter, null),
+        encodeInlineArrayLine(value, options.delimiter.symbol, null),
       );
     case JsonArray():
       writer.pushListItem(
         depth,
-        formatHeader(value.length, delimiter: options.delimiter),
+        formatHeader(value.length, delimiter: options.delimiter.symbol),
       );
       for (final item in value) {
         encodeListItemValue(item, writer, depth + 1, options);
@@ -215,7 +221,10 @@ void encodeListItemValue(
     case JsonObject():
       encodeObjectAsListItem(value, writer, depth, options);
     default:
-      writer.pushListItem(depth, encodePrimitive(value, options.delimiter));
+      writer.pushListItem(
+        depth,
+        encodePrimitive(value, options.delimiter.symbol),
+      );
   }
 }
 
@@ -241,7 +250,7 @@ void encodeObjectAsListItem(
     case JsonArray() when isArrayOfPrimitives(firstValue):
       writer.pushListItem(
         depth,
-        encodeInlineArrayLine(firstValue, options.delimiter, firstKey),
+        encodeInlineArrayLine(firstValue, options.delimiter.symbol, firstKey),
       );
     case JsonArray():
       final rows = isArrayOfObjects(firstValue)
@@ -253,7 +262,7 @@ void encodeObjectAsListItem(
           rows.length,
           key: firstKey,
           fields: fields,
-          delimiter: options.delimiter,
+          delimiter: options.delimiter.symbol,
         );
         writer.pushListItem(depth, header);
         writeTabularRows(rows, fields, writer, depth + 2, options);
@@ -261,7 +270,7 @@ void encodeObjectAsListItem(
         final header = formatHeader(
           firstValue.length,
           key: firstKey,
-          delimiter: options.delimiter,
+          delimiter: options.delimiter.symbol,
         );
         writer.pushListItem(depth, header);
         for (final item in firstValue) {
@@ -275,7 +284,7 @@ void encodeObjectAsListItem(
           firstValue.length,
           key: firstKey,
           fields: keyedFields,
-          delimiter: options.delimiter,
+          delimiter: options.delimiter.symbol,
           keyed: true,
         );
         writer.pushListItem(depth, header);
@@ -293,7 +302,7 @@ void encodeObjectAsListItem(
     default:
       writer.pushListItem(
         depth,
-        '$encodedKey: ${encodePrimitive(firstValue, options.delimiter)}',
+        '$encodedKey: ${encodePrimitive(firstValue, options.delimiter.symbol)}',
       );
   }
 
