@@ -61,6 +61,10 @@ ScanResult toParsedLines(String source, int indentSize, bool strict) {
     if (i == 0 && raw.startsWith(byteOrderMark)) {
       raw = raw.substring(1);
     }
+    // A trailing carriage return belongs to the CRLF terminator.
+    if (raw.endsWith(carriageReturn)) {
+      raw = raw.substring(0, raw.length - 1);
+    }
     int indent = 0;
     while (indent < raw.length && raw[indent] == space) {
       indent++;
