@@ -14,11 +14,11 @@ String encodePrimitive(JsonPrimitive value, [String? delimiter]) {
     return value.toString();
   }
 
-  if (value is double && value == value.truncateToDouble()) {
-    return value.toStringAsFixed(0);
-  }
   if (value is num) {
-    return value.toString();
+    // Dart prints the shortest round-trip digits, with a `.0` suffix on
+    // integral doubles.
+    final text = value.toString();
+    return text.endsWith('.0') ? text.substring(0, text.length - 2) : text;
   }
 
   return encodeStringLiteral(value as String, delimiter ?? comma);
