@@ -9,6 +9,12 @@ bool isBooleanOrNullLiteral(String token) {
   return token == trueLiteral || token == falseLiteral || token == nullLiteral;
 }
 
-bool isNumericLiteral(String token) {
-  return _numericLiteral.hasMatch(token) && double.parse(token).isFinite;
+/// Returns the value of the number [token], or null when it is no number or
+/// overflows to infinity.
+double? parseNumericLiteral(String token) {
+  if (!_numericLiteral.hasMatch(token)) return null;
+  final value = double.parse(token);
+  if (!value.isFinite) return null;
+  // `-0.0 == 0`, so this also folds -0 into 0.
+  return value == 0 ? 0.0 : value;
 }

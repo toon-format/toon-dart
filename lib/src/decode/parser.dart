@@ -298,15 +298,8 @@ JsonPrimitive parsePrimitiveToken(String token) {
     falseLiteral => false,
     nullLiteral => null,
     _ when trimmed.startsWith(doubleQuote) => parseStringLiteral(trimmed),
-    _ when isNumericLiteral(trimmed) => _parseNumber(trimmed),
-    _ => trimmed,
+    _ => parseNumericLiteral(trimmed) ?? trimmed,
   };
-}
-
-double _parseNumber(String token) {
-  final value = double.parse(token);
-  // `-0.0 == 0`, so this also folds -0 into 0.
-  return value == 0 ? 0.0 : value;
 }
 
 String parseStringLiteral(String token) {
