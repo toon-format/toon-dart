@@ -1,61 +1,27 @@
 import '../types.dart';
 
+// 2^53 − 1: beyond it a double loses integer precision, so a larger BigInt
+// encodes as a string.
+final _maxSafeInteger = BigInt.from(9007199254740991);
+
 JsonValue normalizeValue(Object? value) {
-  if (value == null) {
-    return null;
-  }
-
-  if (value is String) {
-    return _assertNoLoneSurrogate(value);
-  }
-
-  if (value is bool) {
-    return value;
-  }
-
-  if (value is num) {
-    if (value == 0 && value.isNegative) {
-      return 0;
-    }
-    if (!value.isFinite) {
-      return null;
-    }
-    return value;
-  }
-
-  if (value is BigInt) {
-    // Beyond ±(2^53 − 1) a double loses integer precision, so encode a string.
-    final minSafe = BigInt.from(-9007199254740991);
-    final maxSafe = BigInt.from(9007199254740991);
-    if (value >= minSafe && value <= maxSafe) {
-      return value.toInt();
-    }
-    return value.toString();
-  }
-
-  if (value is DateTime) {
-    return value.toIso8601String();
-  }
-
-  if (value is List) {
-    return value.map((item) => normalizeValue(item)).toList();
-  }
-
-  if (value is Set) {
-    return value.map((item) => normalizeValue(item)).toList();
-  }
-
-  if (value is Map) {
-    final result = <String, JsonValue>{};
-    for (final entry in value.entries) {
-      result[_assertNoLoneSurrogate(entry.key.toString())] = normalizeValue(
-        entry.value,
-      );
-    }
-    return result;
-  }
-
-  return null;
+  return switch (value) {
+    null || bool() => value,
+    String() => _assertNoLoneSurrogate(value),
+    num() when !value.isFinite => null,
+    num() when value == 0 && value.isNegative => 0,
+    num() => value,
+    BigInt() when value.abs() <= _maxSafeInteger => value.toInt(),
+    BigInt() => value.toString(),
+    DateTime() => value.toIso8601String(),
+    List() => value.map(normalizeValue).toList(),
+    Set() => value.map(normalizeValue).toList(),
+    Map() => <String, JsonValue>{
+      for (final entry in value.entries)
+        _assertNoLoneSurrogate('${entry.key}'): normalizeValue(entry.value),
+    },
+    _ => null,
+  };
 }
 
 // A lone surrogate has no UTF-8 form, so emitting it would silently substitute
