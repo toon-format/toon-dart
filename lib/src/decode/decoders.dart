@@ -9,7 +9,11 @@ import 'validation.dart';
 // #region Entry decoding
 
 JsonValue decodeValueFromLines(LineCursor cursor, DecodeOptions options) {
-  final first = cursor.peek();
+  var first = cursor.peek();
+  while (first != null && first.depth != 0) {
+    skipOverIndentedLine(cursor, first, 0, options.strict);
+    first = cursor.peek();
+  }
   if (first == null) {
     return <String, JsonValue>{};
   }
@@ -39,6 +43,41 @@ JsonValue decodeValueFromLines(LineCursor cursor, DecodeOptions options) {
   }
 
   return decodeObject(cursor, 0, options);
+}
+
+void assertNoDepthJump(ParsedLine nestedLine, int parentDepth, bool strict) {
+  if (strict && nestedLine.depth > parentDepth + 1) {
+    throw FormatException(
+      'Line ${nestedLine.lineNumber}: Indentation depth jump: expected depth ${parentDepth + 1}, but found ${nestedLine.depth}',
+    );
+  }
+}
+
+/// Throws on a line deeper than [contentDepth] in strict mode and skips it in
+/// non-strict mode.
+void skipOverIndentedLine(
+  LineCursor cursor,
+  ParsedLine line,
+  int contentDepth,
+  bool strict,
+) {
+  if (strict) {
+    throw FormatException(
+      'Line ${line.lineNumber}: Over-indented line: expected depth $contentDepth, but found ${line.depth}',
+    );
+  }
+  cursor.advance();
+}
+
+/// Returns the depth of a scope's content lines: one below [baseDepth], or in
+/// non-strict mode the depth of a deeper first line.
+int scopeContentDepth(LineCursor cursor, int baseDepth, bool strict) {
+  final first = cursor.peek();
+  if (first == null || first.depth <= baseDepth + 1) {
+    return baseDepth + 1;
+  }
+  assertNoDepthJump(first, baseDepth, strict);
+  return first.depth;
 }
 
 /// Strict decoding never silently discards input, so a line after the root
@@ -88,7 +127,8 @@ JsonObject decodeObject(
 
     computedDepth ??= line.depth;
     if (line.depth != computedDepth) {
-      break;
+      skipOverIndentedLine(cursor, line, computedDepth, options.strict);
+      continue;
     }
 
     cursor.advance();
@@ -132,9 +172,12 @@ void decodeField(
 
   if (rest.isEmpty) {
     final nextLine = cursor.peek();
-    obj[key] = nextLine != null && nextLine.depth > baseDepth
-        ? decodeObject(cursor, baseDepth + 1, options)
-        : <String, JsonValue>{};
+    if (nextLine != null && nextLine.depth > baseDepth) {
+      assertNoDepthJump(nextLine, baseDepth, options.strict);
+      obj[key] = decodeObject(cursor, baseDepth + 1, options);
+    } else {
+      obj[key] = <String, JsonValue>{};
+    }
     return;
   }
 
@@ -201,34 +244,32 @@ List<JsonValue> decodeListArray(
   DecodeOptions options,
 ) {
   final items = <JsonValue>[];
-  final itemDepth = baseDepth + 1;
+  final itemDepth = scopeContentDepth(cursor, baseDepth, options.strict);
 
   int? startLine;
   int? endLine;
 
   while (!cursor.atEnd() && items.length < header.length) {
-    final line = cursor.peek();
-    if (line == null || line.depth < itemDepth) {
+    final line = cursor.peek()!;
+    if (line.depth <= baseDepth) {
       break;
+    }
+
+    if (line.depth != itemDepth) {
+      skipOverIndentedLine(cursor, line, itemDepth, options.strict);
+      continue;
     }
 
     final isListItem =
-        line.content.startsWith(listItemPrefix) || line.content == '-';
-
-    if (line.depth == itemDepth && isListItem) {
-      startLine ??= line.lineNumber;
-      endLine = line.lineNumber;
-
-      final item = decodeListItem(cursor, itemDepth, options);
-      items.add(item);
-
-      final currentLine = cursor.current();
-      if (currentLine != null) {
-        endLine = currentLine.lineNumber;
-      }
-    } else {
+        line.content.startsWith(listItemPrefix) ||
+        line.content == listItemMarker;
+    if (!isListItem) {
       break;
     }
+
+    startLine ??= line.lineNumber;
+    items.add(decodeListItem(cursor, itemDepth, options));
+    endLine = cursor.current()!.lineNumber;
   }
 
   assertExpectedCount(items.length, header.length, 'list array items', options);
@@ -257,38 +298,39 @@ List<JsonObject> decodeTabularArray(
   DecodeOptions options,
 ) {
   final objects = <JsonObject>[];
-  final rowDepth = baseDepth + 1;
+  final rowDepth = scopeContentDepth(cursor, baseDepth, options.strict);
 
   int? startLine;
   int? endLine;
 
   while (!cursor.atEnd() && objects.length < header.length) {
-    final line = cursor.peek();
-    if (line == null || line.depth < rowDepth) {
+    final line = cursor.peek()!;
+    if (line.depth <= baseDepth) {
       break;
     }
 
-    if (line.depth == rowDepth) {
-      startLine ??= line.lineNumber;
-      endLine = line.lineNumber;
-
-      cursor.advance();
-      final values = parseDelimitedValues(line.content, header.delimiter);
-      assertExpectedCount(
-        values.length,
-        countLeafFields(header.fields!),
-        'tabular row values',
-        options,
-      );
-
-      final obj = objectFromFields(
-        header.fields!,
-        mapRowValuesToPrimitives(values),
-      );
-      objects.add(obj);
-    } else {
-      break;
+    if (line.depth != rowDepth) {
+      skipOverIndentedLine(cursor, line, rowDepth, options.strict);
+      continue;
     }
+
+    startLine ??= line.lineNumber;
+    endLine = line.lineNumber;
+
+    cursor.advance();
+    final values = parseDelimitedValues(line.content, header.delimiter);
+    assertExpectedCount(
+      values.length,
+      countLeafFields(header.fields!),
+      'tabular row values',
+      options,
+    );
+
+    final obj = objectFromFields(
+      header.fields!,
+      mapRowValuesToPrimitives(values),
+    );
+    objects.add(obj);
   }
 
   assertExpectedCount(objects.length, header.length, 'tabular rows', options);
@@ -395,7 +437,7 @@ JsonObject decodeObjectFromListItem(
       cursor.advance();
       decodeField(line.content, cursor, fieldDepth, options, obj);
     } else {
-      break;
+      skipOverIndentedLine(cursor, line, fieldDepth, options.strict);
     }
   }
 
