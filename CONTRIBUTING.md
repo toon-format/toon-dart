@@ -9,7 +9,13 @@ dart pub get
 dart test
 ```
 
-Run `dart format .` and `dart analyze --fatal-infos` before committing, as CI does. `dart test` runs the spec conformance fixtures from the `test/spec` submodule – see [`test/README.md`](./test/README.md) for bumping the spec tag.
+Run `dart format .` and `dart analyze --fatal-infos` before committing, as CI does. `dart test` runs the spec conformance fixtures from the `test/spec` submodule. To move to a later spec tag, check it out in the submodule and commit the bump:
+
+```bash
+git -C test/spec fetch --tags
+git -C test/spec checkout vX.Y.Z
+git add test/spec
+```
 
 ## Pull Requests
 
