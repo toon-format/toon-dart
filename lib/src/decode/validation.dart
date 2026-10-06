@@ -1,8 +1,6 @@
 import '../options.dart';
-import '../types.dart';
 import '../utilities/constants.dart';
 import '../utilities/string_utils.dart';
-import 'scanners.dart';
 
 void assertExpectedCount(
   int actual,
@@ -12,35 +10,6 @@ void assertExpectedCount(
 ) {
   if (options.strict && actual != expected) {
     throw RangeError('Expected $expected $itemType, but got $actual');
-  }
-}
-
-void validateNoExtraListItems(
-  LineCursor cursor,
-  int itemDepth,
-  int expectedCount,
-) {
-  final nextLine = cursor.peek();
-  if (nextLine != null &&
-      nextLine.depth == itemDepth &&
-      nextLine.content.startsWith(listItemPrefix)) {
-    throw RangeError(
-      'Expected $expectedCount list array items, but found more',
-    );
-  }
-}
-
-void validateNoExtraTabularRows(
-  LineCursor cursor,
-  int rowDepth,
-  ArrayHeaderInfo header,
-) {
-  final nextLine = cursor.peek();
-  if (nextLine != null &&
-      nextLine.depth == rowDepth &&
-      !nextLine.content.startsWith(listItemPrefix) &&
-      isDataRow(nextLine.content, header.delimiter)) {
-    throw RangeError('Expected ${header.length} tabular rows, but found more');
   }
 }
 
