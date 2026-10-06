@@ -72,7 +72,7 @@ void _runDecode(Map<String, dynamic> fixtureCase) {
 EncodeOptions? _encodeOptions(Map<String, dynamic>? fixtureOptions) {
   if (fixtureOptions == null) return null;
   return EncodeOptions(
-    indent: (fixtureOptions['indentSize'] ?? 2) as int,
+    indentSize: (fixtureOptions['indentSize'] ?? 2) as int,
     delimiter: (fixtureOptions['delimiter'] ?? ',') as String,
   );
 }
@@ -80,7 +80,7 @@ EncodeOptions? _encodeOptions(Map<String, dynamic>? fixtureOptions) {
 DecodeOptions? _decodeOptions(Map<String, dynamic>? fixtureOptions) {
   if (fixtureOptions == null) return null;
   return DecodeOptions(
-    indent: (fixtureOptions['indentSize'] ?? 2) as int,
+    indentSize: (fixtureOptions['indentSize'] ?? 2) as int,
     strict: (fixtureOptions['strict'] ?? true) as bool,
   );
 }

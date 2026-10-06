@@ -12,7 +12,7 @@ String encodeValue(JsonValue value, EncodeOptions options) {
     return encodePrimitive(value, options.delimiter);
   }
 
-  final writer = LineWriter(options.indent);
+  final writer = LineWriter(options.indentSize);
 
   if (isJsonArray(value)) {
     encodeArray(null, value as JsonArray, writer, 0, options);

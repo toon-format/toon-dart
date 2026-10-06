@@ -39,9 +39,9 @@ Pass `EncodeOptions` to `encode` and `DecodeOptions` to `decode`, e.g. `encode(d
 
 | Option | Default | Description |
 | ------ | ------- | ----------- |
-| `EncodeOptions.indent` | `2` | Spaces per indentation level |
+| `EncodeOptions.indentSize` | `2` | Spaces per indentation level |
 | `EncodeOptions.delimiter` | `','` | Delimiter for inline arrays and tabular rows: `','`, `'\t'`, or `'\|'` |
-| `DecodeOptions.indent` | `2` | Expected spaces per indentation level |
+| `DecodeOptions.indentSize` | `2` | Expected spaces per indentation level |
 | `DecodeOptions.strict` | `true` | Error on length mismatches, blank lines inside arrays, and tabs or uneven indentation |
 
 ## Specification
