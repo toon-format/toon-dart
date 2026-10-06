@@ -20,8 +20,6 @@ void validateNoExtraListItems(
   int itemDepth,
   int expectedCount,
 ) {
-  if (cursor.atEnd) return;
-
   final nextLine = cursor.peek();
   if (nextLine != null &&
       nextLine.depth == itemDepth &&
@@ -37,8 +35,6 @@ void validateNoExtraTabularRows(
   int rowDepth,
   ArrayHeaderInfo header,
 ) {
-  if (cursor.atEnd) return;
-
   final nextLine = cursor.peek();
   if (nextLine != null &&
       nextLine.depth == rowDepth &&
@@ -52,11 +48,8 @@ void validateNoBlankLinesInRange(
   int startLine,
   int endLine,
   List<int> blankLines,
-  bool strict,
   String context,
 ) {
-  if (!strict) return;
-
   // Any blank line between the first and last item fails, whatever its
   // indentation.
   final blank = blankLines

@@ -274,17 +274,15 @@ List<JsonValue> decodeListArray(
 
   assertExpectedCount(items.length, header.length, 'list array items', options);
 
-  if (options.strict && startLine != null && endLine != null) {
-    validateNoBlankLinesInRange(
-      startLine,
-      endLine,
-      cursor.blankLines,
-      options.strict,
-      'list array',
-    );
-  }
-
   if (options.strict) {
+    if (startLine != null && endLine != null) {
+      validateNoBlankLinesInRange(
+        startLine,
+        endLine,
+        cursor.blankLines,
+        'list array',
+      );
+    }
     validateNoExtraListItems(cursor, itemDepth, header.length);
   }
 
@@ -340,17 +338,15 @@ List<JsonObject> decodeTabularArray(
 
   assertExpectedCount(objects.length, header.length, 'tabular rows', options);
 
-  if (options.strict && startLine != null && endLine != null) {
-    validateNoBlankLinesInRange(
-      startLine,
-      endLine,
-      cursor.blankLines,
-      options.strict,
-      'tabular array',
-    );
-  }
-
   if (options.strict) {
+    if (startLine != null && endLine != null) {
+      validateNoBlankLinesInRange(
+        startLine,
+        endLine,
+        cursor.blankLines,
+        'tabular array',
+      );
+    }
     validateNoExtraTabularRows(cursor, rowDepth, header);
   }
 
@@ -418,7 +414,6 @@ JsonObject decodeKeyedObject(
       startLine,
       endLine,
       cursor.blankLines,
-      options.strict,
       'keyed tabular object',
     );
   }
