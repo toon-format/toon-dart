@@ -23,8 +23,7 @@ JsonValue normalizeValue(Object? value) {
     BigInt() when value.abs() <= _maxSafeBigInt => value.toInt(),
     BigInt() => value.toString(),
     DateTime() => value.toIso8601String(),
-    List() => value.map(normalizeValue).toList(),
-    Set() => value.map(normalizeValue).toList(),
+    Iterable() => value.map(normalizeValue).toList(),
     Map() => <String, JsonValue>{
       for (final entry in value.entries)
         _assertNoLoneSurrogate('${entry.key}'): normalizeValue(entry.value),

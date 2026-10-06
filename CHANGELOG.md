@@ -4,6 +4,7 @@
 - **Breaking:** `EncodeOptions.indent` and `DecodeOptions.indent` are now `indentSize`
 - **Breaking:** `decode` throws a `FormatException` instead of a `RangeError` when a count or row width does not match its header
 - `encode` writes an `int` beyond ±(2^53 − 1) as a quoted decimal string, like a `BigInt`
+- `encode` writes any `Iterable` as an array, not only a `List` or `Set`
 - `encode` throws an `ArgumentError` on a string or key with an unpaired surrogate
 - `decode` returns zero as a `double`, like every other number
 

@@ -9,6 +9,7 @@ void main() {
       'largeInt': 9007199254740993,
       'date': DateTime.utc(2025, 1, 2, 3, 4, 5),
       'set': {1, 2},
+      'iterable': [1, 2].map((x) => x * 2),
       'negZero': -0.0,
       'nan': double.nan,
       'inf': double.infinity,
@@ -21,6 +22,7 @@ void main() {
       'largeInt: "9007199254740993"\n'
       'date: "2025-01-02T03:04:05.000Z"\n'
       'set[2]: 1,2\n'
+      'iterable[2]: 2,4\n'
       'negZero: 0\n'
       'nan: null\n'
       'inf: null\n'
