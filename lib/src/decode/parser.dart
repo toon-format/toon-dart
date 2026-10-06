@@ -269,8 +269,8 @@ int findMatchingBrace(String content, int braceStart) {
 List<String> parseDelimitedValues(String input, String delimiter) {
   final values = <String>[];
   final current = StringBuffer();
-  bool inQuotes = false;
-  int i = 0;
+  var inQuotes = false;
+  var i = 0;
 
   while (i < input.length) {
     final char = input[i];

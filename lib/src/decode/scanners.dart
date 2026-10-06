@@ -31,7 +31,7 @@ LineCursor scanLines(String source, int indentSize, bool strict) {
   final parsed = <ParsedLine>[];
   final blankLines = <int>[];
 
-  for (int i = 0; i < lines.length; i++) {
+  for (var i = 0; i < lines.length; i++) {
     var raw = lines[i];
     final lineNumber = i + 1;
     if (i == 0 && raw.startsWith(byteOrderMark)) {

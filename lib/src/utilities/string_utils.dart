@@ -81,7 +81,7 @@ String unescapeString(String value) {
 /// Returns the index of the quote closing the one at [start], skipping escaped
 /// characters, or -1.
 int findClosingQuote(String content, int start) {
-  int i = start + 1;
+  var i = start + 1;
   while (i < content.length) {
     if (content[i] == backslash && i + 1 < content.length) {
       i += 2;
@@ -97,8 +97,8 @@ int findClosingQuote(String content, int start) {
 
 /// Returns the index of the first [char] outside quotes from [start] on, or -1.
 int findUnquotedChar(String content, String char, [int start = 0]) {
-  bool inQuotes = false;
-  int i = start;
+  var inQuotes = false;
+  var i = start;
 
   while (i < content.length) {
     if (content[i] == backslash && i + 1 < content.length && inQuotes) {
