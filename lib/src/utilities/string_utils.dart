@@ -28,55 +28,39 @@ String escapeString(String value) {
       );
 }
 
+final _fourHexDigits = RegExp(r'^[0-9a-fA-F]{4}$');
+
 String unescapeString(String value) {
   final result = StringBuffer();
-  int i = 0;
+  for (var i = 0; i < value.length; i++) {
+    if (value[i] != backslash) {
+      result.write(value[i]);
+      continue;
+    }
+    if (i + 1 >= value.length) {
+      throw const FormatException(
+        'Invalid escape sequence: backslash at end of string',
+      );
+    }
 
-  while (i < value.length) {
-    if (value[i] == backslash) {
-      if (i + 1 >= value.length) {
-        throw const FormatException(
-          'Invalid escape sequence: backslash at end of string',
-        );
-      }
-
-      final next = value[i + 1];
-      if (next == 'n') {
+    final next = value[++i];
+    switch (next) {
+      case 'n':
         result.write(newline);
-        i += 2;
-        continue;
-      }
-      if (next == 't') {
+      case 't':
         result.write(tab);
-        i += 2;
-        continue;
-      }
-      if (next == 'r') {
+      case 'r':
         result.write(carriageReturn);
-        i += 2;
-        continue;
-      }
-      if (next == backslash) {
-        result.write(backslash);
-        i += 2;
-        continue;
-      }
-      if (next == doubleQuote) {
-        result.write(doubleQuote);
-        i += 2;
-        continue;
-      }
-
-      if (next == 'u') {
-        final hex = value.length >= i + 6 ? value.substring(i + 2, i + 6) : '';
-        final codeUnit = RegExp(r'^[0-9a-fA-F]{4}$').hasMatch(hex)
-            ? int.parse(hex, radix: 16)
-            : null;
-        if (codeUnit == null) {
+      case backslash || doubleQuote:
+        result.write(next);
+      case 'u':
+        final hex = value.length >= i + 5 ? value.substring(i + 1, i + 5) : '';
+        if (!_fourHexDigits.hasMatch(hex)) {
           throw const FormatException(
             'Invalid escape sequence: \\u must be followed by 4 hex digits',
           );
         }
+        final codeUnit = int.parse(hex, radix: 16);
         // Supplementary code points must appear as literal UTF-8.
         if (codeUnit >= 0xD800 && codeUnit <= 0xDFFF) {
           throw FormatException(
@@ -84,17 +68,11 @@ String unescapeString(String value) {
           );
         }
         result.writeCharCode(codeUnit);
-        i += 6;
-        continue;
-      }
-
-      throw FormatException('Invalid escape sequence: \\$next');
+        i += 4;
+      default:
+        throw FormatException('Invalid escape sequence: \\$next');
     }
-
-    result.write(value[i]);
-    i++;
   }
-
   return result.toString();
 }
 
