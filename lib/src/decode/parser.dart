@@ -16,8 +16,8 @@ ArrayHeaderParseResult? resolveArrayHeader(String content, bool strict) {
   }
 
   // Non-strict mode resolves duplicate field names by last-write-wins.
-  if (strict && result?.header.fields != null) {
-    _assertUniqueFieldNames(result!.header.fields!);
+  if (result?.header.fields case final fields? when strict) {
+    _assertUniqueFieldNames(fields);
   }
   return result;
 }
@@ -30,7 +30,7 @@ void _assertUniqueFieldNames(List<FieldNode> fields) {
         'Duplicate field name "${field.name}" in field list',
       );
     }
-    if (field.children != null) _assertUniqueFieldNames(field.children!);
+    if (field.children case final children?) _assertUniqueFieldNames(children);
   }
 }
 
@@ -260,7 +260,10 @@ List<String> _splitFieldEntries(String content, String delimiter) {
 int countLeafFields(List<FieldNode> fields) {
   var count = 0;
   for (final field in fields) {
-    count += field.children == null ? 1 : countLeafFields(field.children!);
+    count += switch (field.children) {
+      final children? => countLeafFields(children),
+      null => 1,
+    };
   }
   return count;
 }
