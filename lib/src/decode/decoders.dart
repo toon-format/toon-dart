@@ -383,26 +383,24 @@ JsonObject decodeObjectFromListItem(
   int baseDepth,
   DecodeOptions options,
 ) {
+  // The first field's nested content sits at `baseDepth + 2`, its siblings at
+  // `baseDepth + 1`.
+  final fieldDepth = baseDepth + 1;
   final afterHyphen = firstLine.content.substring(listItemPrefix.length);
-  final result = decodeKeyValue(afterHyphen, cursor, baseDepth, options);
+  final result = decodeKeyValue(afterHyphen, cursor, fieldDepth, options);
 
   final obj = <String, JsonValue>{result.key: result.value};
 
   while (!cursor.atEnd()) {
     final line = cursor.peek();
-    if (line == null || line.depth < result.followDepth) {
+    if (line == null || line.depth < fieldDepth) {
       break;
     }
 
     // A hyphen marks a list item only at item depth, so a `- ` line here is a
     // further field.
-    if (line.depth == result.followDepth) {
-      final pair = decodeKeyValuePair(
-        line,
-        cursor,
-        result.followDepth,
-        options,
-      );
+    if (line.depth == fieldDepth) {
+      final pair = decodeKeyValuePair(line, cursor, fieldDepth, options);
       obj[pair.key] = pair.value;
     } else {
       break;
