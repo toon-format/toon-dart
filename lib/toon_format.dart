@@ -21,8 +21,7 @@ String encode(Object? value, {EncodeOptions? options}) {
 /// Decodes TOON [input] to a `Map`, `List`, or primitive; numbers decode as
 /// `double`.
 ///
-/// Throws a [FormatException] on malformed input and a [RangeError] when a
-/// strict-mode count does not match its header.
+/// Throws a [FormatException] on malformed input.
 Object? decode(String input, {DecodeOptions? options}) {
   options ??= const DecodeOptions();
   final cursor = scanLines(input, options.indentSize, options.strict);

@@ -9,7 +9,7 @@ void assertExpectedCount(
   DecodeOptions options,
 ) {
   if (options.strict && actual != expected) {
-    throw RangeError('Expected $expected $itemType, but got $actual');
+    throw FormatException('Expected $expected $itemType, but got $actual');
   }
 }
 
