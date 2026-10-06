@@ -1,3 +1,4 @@
+/// Options for `encode`.
 class EncodeOptions {
   /// Spaces per indentation level.
   final int indentSize;
@@ -9,6 +10,7 @@ class EncodeOptions {
     : assert(indentSize > 0, 'indentSize must be positive');
 }
 
+/// Options for `decode`.
 class DecodeOptions {
   /// Expected spaces per indentation level.
   final int indentSize;
