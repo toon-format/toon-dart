@@ -29,7 +29,7 @@ JsonValue decodeValueFromLines(LineCursor cursor, DecodeOptions options) {
   }
 
   if (cursor.length == 1 && !isKeyValueLine(first)) {
-    return parsePrimitiveToken(first.content.trim());
+    return parsePrimitiveToken(trimSpaces(first.content));
   }
 
   return decodeObject(cursor, 0, options);
@@ -107,7 +107,7 @@ KeyValueResult decodeKeyValue(
   }
 
   final keyToken = parseKeyToken(content, 0);
-  final rest = content.substring(keyToken.end).trim();
+  final rest = trimSpaces(content.substring(keyToken.end));
 
   if (rest.isEmpty) {
     final nextLine = cursor.peek();
@@ -172,7 +172,7 @@ List<JsonPrimitive> decodeInlinePrimitiveArray(
   String inlineValues,
   DecodeOptions options,
 ) {
-  if (inlineValues.trim().isEmpty) {
+  if (trimSpaces(inlineValues).isEmpty) {
     assertExpectedCount(0, header.length, 'inline array items', options);
     return [];
   }
@@ -335,7 +335,7 @@ JsonValue decodeListItem(
     );
   }
 
-  if (afterHyphen.trim().isEmpty) {
+  if (trimSpaces(afterHyphen).isEmpty) {
     return <String, JsonValue>{};
   }
 

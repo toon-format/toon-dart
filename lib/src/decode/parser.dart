@@ -66,7 +66,7 @@ ArrayHeaderParseResult? parseArrayHeaderLine(
     key = rawKey.startsWith(doubleQuote) ? parseStringLiteral(rawKey) : rawKey;
   }
 
-  final afterColon = content.substring(colonIndex + 1).trim();
+  final afterColon = trimSpaces(content.substring(colonIndex + 1));
 
   final bracketContent = content.substring(bracketStart + 1, bracketEnd);
 
@@ -88,7 +88,7 @@ ArrayHeaderParseResult? parseArrayHeaderLine(
       fields = parseDelimitedValues(
         fieldsContent,
         delimiter,
-      ).map((field) => parseStringLiteral(field.trim())).toList();
+      ).map((field) => parseStringLiteral(trimSpaces(field))).toList();
     }
   }
 
@@ -151,7 +151,7 @@ List<String> parseDelimitedValues(String input, String delimiter) {
     }
 
     if (char == delimiter && !inQuotes) {
-      values.add(current.toString().trim());
+      values.add(trimSpaces(current.toString()));
       current.clear();
       i++;
       continue;
@@ -162,7 +162,7 @@ List<String> parseDelimitedValues(String input, String delimiter) {
   }
 
   if (current.isNotEmpty || values.isNotEmpty) {
-    values.add(current.toString().trim());
+    values.add(trimSpaces(current.toString()));
   }
 
   return values;
@@ -177,7 +177,7 @@ List<JsonPrimitive> mapRowValuesToPrimitives(List<String> values) {
 // #region Primitive and key parsing
 
 JsonPrimitive parsePrimitiveToken(String token) {
-  final trimmed = token.trim();
+  final trimmed = trimSpaces(token);
 
   if (trimmed.isEmpty) {
     return '';
@@ -202,7 +202,7 @@ JsonPrimitive parsePrimitiveToken(String token) {
 }
 
 String parseStringLiteral(String token) {
-  final trimmedToken = token.trim();
+  final trimmedToken = trimSpaces(token);
 
   if (trimmedToken.startsWith(doubleQuote)) {
     final closingQuoteIndex = findClosingQuote(trimmedToken, 0);
@@ -232,7 +232,7 @@ KeyTokenResult parseUnquotedKey(String content, int start) {
     throw const FormatException('Missing colon after key');
   }
 
-  final key = content.substring(start, end).trim();
+  final key = trimSpaces(content.substring(start, end));
 
   end++;
 

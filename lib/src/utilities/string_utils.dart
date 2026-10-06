@@ -1,5 +1,19 @@
 import '../utilities/constants.dart';
 
+/// Trims surrounding U+0020 spaces only: other whitespace, such as NBSP or a
+/// tab outside its delimiter role, belongs to the token.
+String trimSpaces(String value) {
+  var start = 0;
+  var end = value.length;
+  while (start < end && value.codeUnitAt(start) == 0x20) {
+    start++;
+  }
+  while (end > start && value.codeUnitAt(end - 1) == 0x20) {
+    end--;
+  }
+  return value.substring(start, end);
+}
+
 String escapeString(String value) {
   return value
       .replaceAll(backslash, '$backslash$backslash')
