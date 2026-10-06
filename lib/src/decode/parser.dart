@@ -342,9 +342,10 @@ JsonPrimitive parsePrimitiveToken(String token) {
   };
 }
 
-num _parseNumber(String token) {
-  final parsedNumber = double.parse(token);
-  return parsedNumber == -0.0 ? 0 : parsedNumber;
+double _parseNumber(String token) {
+  final value = double.parse(token);
+  // `-0.0 == 0`, so this also folds -0 into 0.
+  return value == 0 ? 0.0 : value;
 }
 
 String parseStringLiteral(String token) {
