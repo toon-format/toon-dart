@@ -51,7 +51,7 @@ void validateNoExtraTabularRows(
 void validateNoBlankLinesInRange(
   int startLine,
   int endLine,
-  List<BlankLineInfo> blankLines,
+  List<int> blankLines,
   bool strict,
   String context,
 ) {
@@ -59,15 +59,12 @@ void validateNoBlankLinesInRange(
 
   // Any blank line between the first and last item fails, whatever its
   // indentation.
-  final blanksInRange = blankLines
-      .where(
-        (blank) => blank.lineNumber > startLine && blank.lineNumber < endLine,
-      )
-      .toList();
-
-  if (blanksInRange.isNotEmpty) {
+  final blank = blankLines
+      .where((line) => line > startLine && line < endLine)
+      .firstOrNull;
+  if (blank != null) {
     throw FormatException(
-      'Line ${blanksInRange[0].lineNumber}: Blank lines inside $context are not allowed in strict mode',
+      'Line $blank: Blank lines inside $context are not allowed in strict mode',
     );
   }
 }

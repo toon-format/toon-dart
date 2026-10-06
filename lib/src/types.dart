@@ -16,30 +16,14 @@ class FieldNode {
 }
 
 class ParsedLine {
-  final String raw;
-  final int indent;
   final String content;
   final int depth;
   final int lineNumber;
 
   const ParsedLine({
-    required this.raw,
-    required this.indent,
     required this.content,
     required this.depth,
     required this.lineNumber,
-  });
-}
-
-class BlankLineInfo {
-  final int lineNumber;
-  final int indent;
-  final int depth;
-
-  const BlankLineInfo({
-    required this.lineNumber,
-    required this.indent,
-    required this.depth,
   });
 }
 

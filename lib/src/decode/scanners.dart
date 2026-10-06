@@ -3,7 +3,7 @@ import '../utilities/constants.dart';
 
 class ScanResult {
   final List<ParsedLine> lines;
-  final List<BlankLineInfo> blankLines;
+  final List<int> blankLines;
 
   const ScanResult({required this.lines, required this.blankLines});
 }
@@ -11,13 +11,13 @@ class ScanResult {
 class LineCursor {
   final List<ParsedLine> _lines;
   int _index;
-  final List<BlankLineInfo> _blankLines;
+  final List<int> _blankLines;
 
-  LineCursor(this._lines, [List<BlankLineInfo>? blankLines])
+  LineCursor(this._lines, [List<int>? blankLines])
     : _index = 0,
       _blankLines = blankLines ?? [];
 
-  List<BlankLineInfo> getBlankLines() {
+  List<int> getBlankLines() {
     return _blankLines;
   }
 
@@ -49,7 +49,7 @@ class LineCursor {
 ScanResult toParsedLines(String source, int indentSize, bool strict) {
   final lines = source.split('\n');
   final parsed = <ParsedLine>[];
-  final blankLines = <BlankLineInfo>[];
+  final blankLines = <int>[];
 
   for (int i = 0; i < lines.length; i++) {
     var raw = lines[i];
@@ -86,12 +86,8 @@ ScanResult toParsedLines(String source, int indentSize, bool strict) {
       continue;
     }
 
-    final depth = (indent - tabIndent) ~/ indentSize + tabIndent;
-
     if (content.isEmpty) {
-      blankLines.add(
-        BlankLineInfo(lineNumber: lineNumber, indent: indent, depth: depth),
-      );
+      blankLines.add(lineNumber);
       continue;
     }
 
@@ -109,14 +105,9 @@ ScanResult toParsedLines(String source, int indentSize, bool strict) {
       }
     }
 
+    final depth = (indent - tabIndent) ~/ indentSize + tabIndent;
     parsed.add(
-      ParsedLine(
-        raw: raw,
-        indent: indent,
-        content: content,
-        depth: depth,
-        lineNumber: lineNumber,
-      ),
+      ParsedLine(content: content, depth: depth, lineNumber: lineNumber),
     );
   }
 
