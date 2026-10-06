@@ -9,7 +9,7 @@ dart pub get
 dart test
 ```
 
-Run `dart format .` and `dart analyze` before committing. `dart test` runs the spec conformance fixtures from the `test/spec` submodule – see [`test/README.md`](./test/README.md) for bumping the spec tag.
+Run `dart format .` and `dart analyze --fatal-infos` before committing, as CI does. `dart test` runs the spec conformance fixtures from the `test/spec` submodule – see [`test/README.md`](./test/README.md) for bumping the spec tag.
 
 ## Pull Requests
 
