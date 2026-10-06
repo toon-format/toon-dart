@@ -12,7 +12,9 @@ void assertExpectedCount(
 ) {
   if (options.strict && actual != expected) {
     throw FormatException(
-      'Line ${line.lineNumber}: Expected $expected $itemType, but got $actual',
+      expected < 0
+          ? 'Line ${line.lineNumber}: Array length out of range'
+          : 'Line ${line.lineNumber}: Expected $expected $itemType, but got $actual',
     );
   }
 }

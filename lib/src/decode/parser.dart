@@ -152,7 +152,8 @@ final _bracketLength = RegExp(r'^(?:0|[1-9]\d*)$');
     throw FormatException('Invalid array length: "$segment"');
   }
 
-  // A length beyond the int range can never match a count.
+  // A length beyond the int range can never match a count; -1 marks it for
+  // the count error.
   return (
     length: int.tryParse(content) ?? -1,
     delimiter: delimiter,
