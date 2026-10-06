@@ -83,18 +83,7 @@ bool isJsonPrimitive(Object? value) {
   return value == null || value is String || value is num || value is bool;
 }
 
-bool isJsonArray(Object? value) {
-  return value is List;
-}
+bool isArrayOfPrimitives(JsonArray value) => value.every(isJsonPrimitive);
 
-bool isJsonObject(Object? value) {
-  return value != null && value is Map<String, Object?>;
-}
-
-bool isArrayOfPrimitives(JsonArray value) {
-  return value.every((item) => isJsonPrimitive(item));
-}
-
-bool isArrayOfObjects(JsonArray value) {
-  return value.every((item) => isJsonObject(item));
-}
+bool isArrayOfObjects(JsonArray value) =>
+    value.every((item) => item is JsonObject);
