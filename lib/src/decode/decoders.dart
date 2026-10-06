@@ -14,6 +14,12 @@ JsonValue decodeValueFromLines(LineCursor cursor, DecodeOptions options) {
     return <String, JsonValue>{};
   }
 
+  if (trimSpaces(first.content) == '[]') {
+    cursor.advance();
+    assertFullyConsumed(cursor, options.strict);
+    return <JsonValue>[];
+  }
+
   if (isArrayHeaderContent(first.content)) {
     final headerInfo = parseArrayHeaderLine(first.content, defaultDelimiter);
     if (headerInfo != null) {
@@ -33,6 +39,30 @@ JsonValue decodeValueFromLines(LineCursor cursor, DecodeOptions options) {
   }
 
   return decodeObject(cursor, 0, options);
+}
+
+/// Strict decoding never silently discards input, so a line after the root
+/// form is an error; non-strict decoding skips it unless it is a bare token.
+void assertFullyConsumed(LineCursor cursor, bool strict) {
+  final line = cursor.peek();
+  if (line == null) return;
+  if (strict) {
+    throw FormatException(
+      'Line ${line.lineNumber}: Unexpected content after the document root',
+    );
+  }
+  while (!cursor.atEnd()) {
+    assertNotScalarLine(cursor.next()!);
+  }
+}
+
+/// Both modes reject a bare token outside root primitive position.
+void assertNotScalarLine(ParsedLine line) {
+  if (!isKeyValueContent(line.content)) {
+    throw FormatException(
+      'Line ${line.lineNumber}: Unexpected bare token line outside root primitive position',
+    );
+  }
 }
 
 // #endregion
@@ -113,7 +143,7 @@ KeyValueResult decodeKeyValue(
     );
   }
 
-  final value = parsePrimitiveToken(rest);
+  final value = rest == '[]' ? <JsonValue>[] : parsePrimitiveToken(rest);
   return KeyValueResult(
     key: keyToken.key,
     value: value,
@@ -324,6 +354,10 @@ JsonValue decodeListItem(
 
   if (trimSpaces(afterHyphen).isEmpty) {
     return <String, JsonValue>{};
+  }
+
+  if (trimSpaces(afterHyphen) == '[]') {
+    return <JsonValue>[];
   }
 
   if (isArrayHeaderContent(afterHyphen)) {
