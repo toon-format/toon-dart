@@ -17,8 +17,7 @@ class EncodeOptions {
   /// Delimiter for inline arrays and tabular rows.
   final Delimiter delimiter;
 
-  const EncodeOptions({this.indentSize = 2, this.delimiter = Delimiter.comma})
-    : assert(indentSize > 0, 'indentSize must be positive');
+  const EncodeOptions({this.indentSize = 2, this.delimiter = Delimiter.comma});
 }
 
 /// Options for `decode`.
@@ -30,6 +29,5 @@ class DecodeOptions {
   /// mismatches, duplicate keys, or tab indentation.
   final bool strict;
 
-  const DecodeOptions({this.indentSize = 2, this.strict = true})
-    : assert(indentSize > 0, 'indentSize must be positive');
+  const DecodeOptions({this.indentSize = 2, this.strict = true});
 }

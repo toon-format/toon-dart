@@ -7,6 +7,7 @@
 - `encode` writes an `int` beyond ±(2^53 − 1) as a quoted decimal string, like a `BigInt`
 - `encode` writes any `Iterable` as an array, not only a `List` or `Set`
 - `encode` throws an `ArgumentError` on a string or key with an unpaired surrogate
+- `encode` and `decode` throw an `ArgumentError` on an `indentSize` below 1, also in release builds
 - `decode` returns zero as a `double`, like every other number
 
 ## 0.1.0
