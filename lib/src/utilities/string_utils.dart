@@ -67,6 +67,27 @@ String unescapeString(String value) {
         continue;
       }
 
+      if (next == 'u') {
+        final hex = value.length >= i + 6 ? value.substring(i + 2, i + 6) : '';
+        final codeUnit = RegExp(r'^[0-9a-fA-F]{4}$').hasMatch(hex)
+            ? int.parse(hex, radix: 16)
+            : null;
+        if (codeUnit == null) {
+          throw const FormatException(
+            'Invalid escape sequence: \\u must be followed by 4 hex digits',
+          );
+        }
+        // Supplementary code points must appear as literal UTF-8.
+        if (codeUnit >= 0xD800 && codeUnit <= 0xDFFF) {
+          throw FormatException(
+            'Invalid escape sequence: \\u$hex is a lone surrogate',
+          );
+        }
+        result.writeCharCode(codeUnit);
+        i += 6;
+        continue;
+      }
+
       throw FormatException('Invalid escape sequence: \\$next');
     }
 
