@@ -4,6 +4,7 @@ import '../utilities/constants.dart';
 import '../utilities/string_utils.dart';
 import 'normalize.dart';
 import 'primitives.dart';
+import 'tabular.dart';
 import 'writer.dart';
 
 // #region Encode normalized JsonValue
@@ -113,12 +114,12 @@ void encodeArray(
 
   if (isArrayOfObjects(value)) {
     final objects = value.cast<JsonObject>();
-    final header = extractTabularHeader(objects);
-    if (header != null) {
+    final fields = extractTabularFields(objects);
+    if (fields != null) {
       encodeArrayOfObjectsAsTabular(
         key,
         objects,
-        header,
+        fields,
         writer,
         depth,
         options,
@@ -178,7 +179,7 @@ String encodeInlineArrayLine(
 void encodeArrayOfObjectsAsTabular(
   String? prefix,
   List<JsonObject> rows,
-  List<String> header,
+  List<FieldNode> fields,
   LineWriter writer,
   int depth,
   EncodeOptions options,
@@ -186,60 +187,24 @@ void encodeArrayOfObjectsAsTabular(
   final formattedHeader = formatHeader(
     rows.length,
     key: prefix,
-    fields: header,
+    fields: fields,
     delimiter: options.delimiter,
   );
   writer.push(depth, formattedHeader);
 
-  writeTabularRows(rows, header, writer, depth + 1, options);
-}
-
-List<String>? extractTabularHeader(List<JsonObject> rows) {
-  if (rows.isEmpty) return null;
-
-  final firstRow = rows[0];
-  final firstKeys = firstRow.keys.toList();
-  if (firstKeys.isEmpty) return null;
-
-  if (isTabularArray(rows, firstKeys)) {
-    return firstKeys;
-  }
-  return null;
-}
-
-bool isTabularArray(List<JsonObject> rows, List<String> header) {
-  for (final row in rows) {
-    final keys = row.keys.toList();
-
-    // Rows may list the same keys in a different order.
-    if (keys.length != header.length) {
-      return false;
-    }
-
-    for (final key in header) {
-      if (!row.containsKey(key)) {
-        return false;
-      }
-      if (!isJsonPrimitive(row[key])) {
-        return false;
-      }
-    }
-  }
-
-  return true;
+  writeTabularRows(rows, fields, writer, depth + 1, options);
 }
 
 void writeTabularRows(
   List<JsonObject> rows,
-  List<String> header,
+  List<FieldNode> fields,
   LineWriter writer,
   int depth,
   EncodeOptions options,
 ) {
   for (final row in rows) {
-    final values = header.map((key) => row[key]).toList();
-    final joinedValue = encodeAndJoinPrimitives(values, options.delimiter);
-    writer.push(depth, joinedValue);
+    final leaves = collectRowLeaves(row, fields);
+    writer.push(depth, encodeAndJoinPrimitives(leaves, options.delimiter));
   }
 }
 
@@ -296,7 +261,7 @@ void encodeObjectAsListItem(
       writer.pushListItem(depth, formatted);
     } else {
       final objects = isArrayOfObjects(arr) ? arr.cast<JsonObject>() : null;
-      final fields = objects == null ? null : extractTabularHeader(objects);
+      final fields = objects == null ? null : extractTabularFields(objects);
       if (fields != null) {
         final header = formatHeader(
           arr.length,

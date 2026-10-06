@@ -6,6 +6,15 @@ typedef JsonObject = Map<String, JsonValue>;
 
 typedef JsonValue = Object?; // JsonPrimitive | JsonArray | JsonObject
 
+/// One entry of a tabular field list: a leaf maps to one row cell, a nested
+/// field group to a nested object per row.
+class FieldNode {
+  final String name;
+  final List<FieldNode>? children;
+
+  const FieldNode(this.name, [this.children]);
+}
+
 class ParsedLine {
   final String raw;
   final int indent;

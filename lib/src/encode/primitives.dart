@@ -62,7 +62,7 @@ String encodeAndJoinPrimitives(
 String formatHeader(
   int length, {
   String? key,
-  List<String>? fields,
+  List<FieldNode>? fields,
   String? delimiter,
 }) {
   final delimiterValue = delimiter ?? comma;
@@ -79,9 +79,7 @@ String formatHeader(
   header += '[$length$delimiterSuffix]';
 
   if (fields != null) {
-    final quotedFields = fields.map((f) => encodeKey(f)).toList();
-    final joinedFields = quotedFields.join(delimiterValue);
-    header += '{$joinedFields}';
+    header += '{${_formatFieldSegment(fields, delimiterValue)}}';
   }
 
   header += ':';
@@ -90,3 +88,15 @@ String formatHeader(
 }
 
 // #endregion
+
+String _formatFieldSegment(List<FieldNode> fields, String delimiter) {
+  return fields
+      .map(
+        (field) =>
+            encodeKey(field.name) +
+            (field.children == null
+                ? ''
+                : '{${_formatFieldSegment(field.children!, delimiter)}}'),
+      )
+      .join(delimiter);
+}
