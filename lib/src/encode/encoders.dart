@@ -79,8 +79,7 @@ void encodeArray(
   EncodeOptions options,
 ) {
   if (value.isEmpty) {
-    final header = formatHeader(0, key: key, delimiter: options.delimiter);
-    writer.push(depth, header);
+    writer.push(depth, key == null ? '[]' : '${encodeKey(key)}: []');
     return;
   }
 
@@ -284,7 +283,9 @@ void encodeObjectAsListItem(
     );
   } else if (isJsonArray(firstValue)) {
     final arr = firstValue as JsonArray;
-    if (isArrayOfPrimitives(arr)) {
+    if (arr.isEmpty) {
+      writer.pushListItem(depth, '$encodedKey: []');
+    } else if (isArrayOfPrimitives(arr)) {
       final formatted = encodeInlineArrayLine(arr, options.delimiter, firstKey);
       writer.pushListItem(depth, formatted);
     } else if (isArrayOfObjects(arr)) {
