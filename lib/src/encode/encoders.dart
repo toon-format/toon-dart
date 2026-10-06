@@ -305,12 +305,12 @@ void encodeObjectAsListItem(
           delimiter: options.delimiter,
         );
         writer.pushListItem(depth, header);
-        writeTabularRows(objects!, fields, writer, depth + 1, options);
+        writeTabularRows(objects!, fields, writer, depth + 2, options);
       } else {
         final header = formatHeader(arr.length, delimiter: options.delimiter);
         writer.pushListItem(depth, '$encodedKey$header');
         for (final item in arr) {
-          encodeListItemValue(item, writer, depth + 1, options);
+          encodeListItemValue(item, writer, depth + 2, options);
         }
       }
     }
