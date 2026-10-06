@@ -3,7 +3,7 @@ import '../utilities/constants.dart';
 import '../utilities/string_utils.dart';
 import '../utilities/validation.dart';
 
-String encodePrimitive(JsonPrimitive value, [String? delimiter]) {
+String encodePrimitive(JsonPrimitive value, String delimiter) {
   if (value == null) {
     return nullLiteral;
   }
@@ -19,10 +19,10 @@ String encodePrimitive(JsonPrimitive value, [String? delimiter]) {
     return text.endsWith('.0') ? text.substring(0, text.length - 2) : text;
   }
 
-  return encodeStringLiteral(value as String, delimiter ?? comma);
+  return encodeStringLiteral(value as String, delimiter);
 }
 
-String encodeStringLiteral(String value, [String delimiter = comma]) {
+String encodeStringLiteral(String value, String delimiter) {
   if (isSafeUnquoted(value, delimiter)) {
     return value;
   }
@@ -38,10 +38,7 @@ String encodeKey(String key) {
   return '$doubleQuote${escapeString(key)}$doubleQuote';
 }
 
-String encodeAndJoinPrimitives(
-  List<JsonPrimitive> values, [
-  String delimiter = comma,
-]) {
+String encodeAndJoinPrimitives(List<JsonPrimitive> values, String delimiter) {
   return values.map((v) => encodePrimitive(v, delimiter)).join(delimiter);
 }
 
@@ -49,24 +46,20 @@ String formatHeader(
   int length, {
   String? key,
   List<FieldNode>? fields,
-  String? delimiter,
+  required String delimiter,
   bool keyed = false,
 }) {
-  final delimiterValue = delimiter ?? comma;
-
   String header = '';
 
   if (key != null) {
     header += encodeKey(key);
   }
 
-  final delimiterSuffix = delimiterValue != defaultDelimiter
-      ? delimiterValue
-      : '';
+  final delimiterSuffix = delimiter != defaultDelimiter ? delimiter : '';
   header += '[$length${keyed ? colon : ''}$delimiterSuffix]';
 
   if (fields != null) {
-    header += '{${_formatFieldSegment(fields, delimiterValue)}}';
+    header += '{${_formatFieldSegment(fields, delimiter)}}';
   }
 
   header += ':';

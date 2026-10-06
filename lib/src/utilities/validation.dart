@@ -13,7 +13,7 @@ final _structuralChar = RegExp(r'[:"\\\[\]{}\x00-\x1F]');
 
 bool isValidUnquotedKey(String key) => _unquotedKey.hasMatch(key);
 
-bool isSafeUnquoted(String value, [String delimiter = comma]) {
+bool isSafeUnquoted(String value, String delimiter) {
   return value.isNotEmpty &&
       !_edgeWhitespace.hasMatch(value) &&
       !isBooleanOrNullLiteral(value) &&
