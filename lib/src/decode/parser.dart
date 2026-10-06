@@ -267,43 +267,23 @@ int findMatchingBrace(String content, int braceStart) {
 }
 
 List<String> parseDelimitedValues(String input, String delimiter) {
+  if (input.isEmpty) return [];
+
   final values = <String>[];
-  final current = StringBuffer();
+  var valueStart = 0;
   var inQuotes = false;
-  var i = 0;
-
-  while (i < input.length) {
+  for (var i = 0; i < input.length; i++) {
     final char = input[i];
-
-    if (char == backslash && i + 1 < input.length && inQuotes) {
-      current.write(char);
-      current.write(input[i + 1]);
-      i += 2;
-      continue;
-    }
-
-    if (char == doubleQuote) {
+    if (char == backslash && inQuotes) {
+      i++;
+    } else if (char == doubleQuote) {
       inQuotes = !inQuotes;
-      current.write(char);
-      i++;
-      continue;
+    } else if (!inQuotes && char == delimiter) {
+      values.add(trimSpaces(input.substring(valueStart, i)));
+      valueStart = i + 1;
     }
-
-    if (char == delimiter && !inQuotes) {
-      values.add(trimSpaces(current.toString()));
-      current.clear();
-      i++;
-      continue;
-    }
-
-    current.write(char);
-    i++;
   }
-
-  if (current.isNotEmpty || values.isNotEmpty) {
-    values.add(trimSpaces(current.toString()));
-  }
-
+  values.add(trimSpaces(input.substring(valueStart)));
   return values;
 }
 
