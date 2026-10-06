@@ -143,26 +143,26 @@ void decodeField(
   DecodeOptions options,
   JsonObject obj,
 ) {
-  final arrayHeader = resolveArrayHeader(content, options.strict);
-  if (arrayHeader != null && arrayHeader.header.key != null) {
-    final key = arrayHeader.header.key!;
-    _assertNewKey(obj, key, options.strict);
-    obj[key] = decodeArrayFromHeader(
-      arrayHeader.header,
-      arrayHeader.inlineValues,
-      cursor,
-      baseDepth,
-      options,
-    );
-    return;
-  }
-
-  if (arrayHeader != null && options.strict) {
-    throw FormatException(
-      arrayHeader.header.keyed
-          ? 'Keyless keyed header is only valid at the document root'
-          : 'Keyless array header is only valid at the document root or as a list item',
-    );
+  if (resolveArrayHeader(content, options.strict) case final result?) {
+    final header = result.header;
+    if (header.key case final key?) {
+      _assertNewKey(obj, key, options.strict);
+      obj[key] = decodeArrayFromHeader(
+        header,
+        result.inlineValues,
+        cursor,
+        baseDepth,
+        options,
+      );
+      return;
+    }
+    if (options.strict) {
+      throw FormatException(
+        header.keyed
+            ? 'Keyless keyed header is only valid at the document root'
+            : 'Keyless array header is only valid at the document root or as a list item',
+      );
+    }
   }
 
   final (:key, :end) = parseKeyToken(content);
