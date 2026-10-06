@@ -4,8 +4,6 @@ import 'dart:io';
 import 'package:test/test.dart';
 import 'package:toon_format/toon_format.dart';
 
-import 'known_failures.dart';
-
 void main() {
   for (final category in const ['encode', 'decode']) {
     final files = Directory('test/spec/tests/fixtures/$category')
@@ -26,16 +24,7 @@ void main() {
         group(fileName, () {
           for (var i = 0; i < cases.length; i++) {
             final fixtureCase = cases[i];
-            final id = '$category/$fileName#$i';
-            test('#$i ${fixtureCase['name']}', () {
-              if (!knownFailures.contains(id)) return run(fixtureCase);
-              try {
-                run(fixtureCase);
-              } catch (_) {
-                return;
-              }
-              fail('$id passes now – remove it from known_failures.dart');
-            });
+            test('#$i ${fixtureCase['name']}', () => run(fixtureCase));
           }
         });
       }
