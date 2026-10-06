@@ -14,6 +14,8 @@ String trimSpaces(String value) {
   return value.substring(start, end);
 }
 
+final _controlChar = RegExp(r'[\x00-\x1F]');
+
 String escapeString(String value) {
   return value
       .replaceAll(backslash, '$backslash$backslash')
@@ -22,7 +24,7 @@ String escapeString(String value) {
       .replaceAll(carriageReturn, '${backslash}r')
       .replaceAll(tab, '${backslash}t')
       .replaceAllMapped(
-        RegExp(r'[\x00-\x1F]'),
+        _controlChar,
         (m) =>
             '${backslash}u${m[0]!.codeUnitAt(0).toRadixString(16).padLeft(4, '0')}',
       );
