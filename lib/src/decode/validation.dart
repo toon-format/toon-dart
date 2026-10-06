@@ -20,7 +20,7 @@ void validateNoExtraListItems(
   int itemDepth,
   int expectedCount,
 ) {
-  if (cursor.atEnd()) return;
+  if (cursor.atEnd) return;
 
   final nextLine = cursor.peek();
   if (nextLine != null &&
@@ -37,7 +37,7 @@ void validateNoExtraTabularRows(
   int rowDepth,
   ArrayHeaderInfo header,
 ) {
-  if (cursor.atEnd()) return;
+  if (cursor.atEnd) return;
 
   final nextLine = cursor.peek();
   if (nextLine != null &&

@@ -91,7 +91,7 @@ void assertFullyConsumed(LineCursor cursor, bool strict) {
       'Line ${line.lineNumber}: Unexpected content after the document root',
     );
   }
-  while (!cursor.atEnd()) {
+  while (!cursor.atEnd) {
     assertNotScalarLine(cursor.next()!);
   }
 }
@@ -116,7 +116,7 @@ JsonObject decodeObject(
   // nested structures.
   int? computedDepth;
 
-  while (!cursor.atEnd()) {
+  while (!cursor.atEnd) {
     final line = cursor.peek()!;
     if (line.depth < baseDepth) {
       break;
@@ -249,7 +249,7 @@ List<JsonValue> decodeListArray(
   int? endLine;
 
   // Only strict mode stops at N, leaving a surplus to the check below.
-  while (!cursor.atEnd() && (!options.strict || items.length < header.length)) {
+  while (!cursor.atEnd && (!options.strict || items.length < header.length)) {
     final line = cursor.peek()!;
     if (line.depth <= baseDepth) {
       break;
@@ -269,7 +269,7 @@ List<JsonValue> decodeListArray(
 
     startLine ??= line.lineNumber;
     items.add(decodeListItem(cursor, itemDepth, options));
-    endLine = cursor.current()!.lineNumber;
+    endLine = cursor.current!.lineNumber;
   }
 
   assertExpectedCount(items.length, header.length, 'list array items', options);
@@ -278,7 +278,7 @@ List<JsonValue> decodeListArray(
     validateNoBlankLinesInRange(
       startLine,
       endLine,
-      cursor.getBlankLines(),
+      cursor.blankLines,
       options.strict,
       'list array',
     );
@@ -304,8 +304,7 @@ List<JsonObject> decodeTabularArray(
   int? endLine;
 
   // Only strict mode stops at N, leaving a surplus to the check below.
-  while (!cursor.atEnd() &&
-      (!options.strict || objects.length < header.length)) {
+  while (!cursor.atEnd && (!options.strict || objects.length < header.length)) {
     final line = cursor.peek()!;
     if (line.depth <= baseDepth) {
       break;
@@ -345,7 +344,7 @@ List<JsonObject> decodeTabularArray(
     validateNoBlankLinesInRange(
       startLine,
       endLine,
-      cursor.getBlankLines(),
+      cursor.blankLines,
       options.strict,
       'tabular array',
     );
@@ -373,7 +372,7 @@ JsonObject decodeKeyedObject(
 
   // A keyed scope ends only by dedent or end of input, so every line at entry
   // depth carrying an unquoted colon is an entry row.
-  while (!cursor.atEnd()) {
+  while (!cursor.atEnd) {
     final line = cursor.peek()!;
     if (line.depth <= baseDepth) {
       break;
@@ -418,7 +417,7 @@ JsonObject decodeKeyedObject(
     validateNoBlankLinesInRange(
       startLine,
       endLine,
-      cursor.getBlankLines(),
+      cursor.blankLines,
       options.strict,
       'keyed tabular object',
     );
@@ -498,7 +497,7 @@ JsonObject decodeObjectFromListItem(
   final obj = <String, JsonValue>{};
   decodeField(afterHyphen, cursor, fieldDepth, options, obj);
 
-  while (!cursor.atEnd()) {
+  while (!cursor.atEnd) {
     final line = cursor.peek()!;
     if (line.depth < fieldDepth) {
       break;

@@ -18,7 +18,6 @@ String encode(Object? value, {EncodeOptions? options}) {
 /// Decodes TOON [input] to a `Map`, `List`, or primitive.
 Object? decode(String input, {DecodeOptions? options}) {
   options ??= const DecodeOptions();
-  final scanResult = toParsedLines(input, options.indentSize, options.strict);
-  final cursor = LineCursor(scanResult.lines, scanResult.blankLines);
+  final cursor = scanLines(input, options.indentSize, options.strict);
   return decodeValueFromLines(cursor, options);
 }

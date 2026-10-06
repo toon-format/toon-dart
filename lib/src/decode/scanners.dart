@@ -1,52 +1,31 @@
 import '../types.dart';
 import '../utilities/constants.dart';
 
-class ScanResult {
-  final List<ParsedLine> lines;
-  final List<int> blankLines;
-
-  const ScanResult({required this.lines, required this.blankLines});
-}
-
 class LineCursor {
   final List<ParsedLine> _lines;
-  int _index;
-  final List<int> _blankLines;
 
-  LineCursor(this._lines, [List<int>? blankLines])
-    : _index = 0,
-      _blankLines = blankLines ?? [];
+  /// Line numbers of the blank lines, which strict mode rejects inside arrays.
+  final List<int> blankLines;
 
-  List<int> getBlankLines() {
-    return _blankLines;
-  }
+  int _index = 0;
 
-  ParsedLine? peek() {
-    if (_index >= _lines.length) return null;
-    return _lines[_index];
-  }
-
-  ParsedLine? next() {
-    if (_index >= _lines.length) return null;
-    return _lines[_index++];
-  }
-
-  ParsedLine? current() {
-    return _index > 0 ? _lines[_index - 1] : null;
-  }
-
-  void advance() {
-    _index++;
-  }
-
-  bool atEnd() {
-    return _index >= _lines.length;
-  }
+  LineCursor(this._lines, this.blankLines);
 
   int get length => _lines.length;
+
+  bool get atEnd => _index >= _lines.length;
+
+  /// The line most recently consumed.
+  ParsedLine? get current => _index > 0 ? _lines[_index - 1] : null;
+
+  ParsedLine? peek() => atEnd ? null : _lines[_index];
+
+  ParsedLine? next() => atEnd ? null : _lines[_index++];
+
+  void advance() => _index++;
 }
 
-ScanResult toParsedLines(String source, int indentSize, bool strict) {
+LineCursor scanLines(String source, int indentSize, bool strict) {
   final lines = source.split('\n');
   final parsed = <ParsedLine>[];
   final blankLines = <int>[];
@@ -111,7 +90,7 @@ ScanResult toParsedLines(String source, int indentSize, bool strict) {
     );
   }
 
-  return ScanResult(lines: parsed, blankLines: blankLines);
+  return LineCursor(parsed, blankLines);
 }
 
 String _trimTrailingSpaces(String value) {
