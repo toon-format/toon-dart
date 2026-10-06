@@ -21,7 +21,7 @@ JsonValue decodeValueFromLines(LineCursor cursor, DecodeOptions options) {
   }
 
   if (isArrayHeaderContent(first.content)) {
-    final headerInfo = parseArrayHeaderLine(first.content, defaultDelimiter);
+    final headerInfo = resolveArrayHeader(first.content, options.strict);
     if (headerInfo != null) {
       cursor.advance();
       return decodeArrayFromHeader(
@@ -107,7 +107,7 @@ KeyValueResult decodeKeyValue(
   int baseDepth,
   DecodeOptions options,
 ) {
-  final arrayHeader = parseArrayHeaderLine(content, defaultDelimiter);
+  final arrayHeader = resolveArrayHeader(content, options.strict);
   if (arrayHeader != null && arrayHeader.header.key != null) {
     final value = decodeArrayFromHeader(
       arrayHeader.header,
@@ -361,7 +361,7 @@ JsonValue decodeListItem(
   }
 
   if (isArrayHeaderContent(afterHyphen)) {
-    final arrayHeader = parseArrayHeaderLine(afterHyphen, defaultDelimiter);
+    final arrayHeader = resolveArrayHeader(afterHyphen, options.strict);
     if (arrayHeader != null) {
       return decodeArrayFromHeader(
         arrayHeader.header,

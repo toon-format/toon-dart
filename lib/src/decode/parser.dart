@@ -5,6 +5,20 @@ import '../utilities/string_utils.dart';
 
 // #region Array header parsing
 
+/// Parses [content] as an array header, or returns null when it is no header
+/// line. An invalid header throws in strict mode and falls through to a
+/// key-value line in non-strict mode.
+ArrayHeaderParseResult? resolveArrayHeader(String content, bool strict) {
+  try {
+    return parseArrayHeaderLine(content, defaultDelimiter);
+  } on FormatException {
+    if (strict) rethrow;
+    return null;
+  }
+}
+
+/// Returns null when [content] is no header line and throws a
+/// [FormatException] when it is an invalid one.
 ArrayHeaderParseResult? parseArrayHeaderLine(
   String content,
   String defaultDelimiter,
@@ -42,9 +56,11 @@ ArrayHeaderParseResult? parseArrayHeaderLine(
     return null;
   }
 
+  // Past this check, a grammar failure makes the line an invalid header
+  // instead of a key-value line.
   final bracketEnd = findUnquotedChar(content, closeBracket, bracketStart);
   if (bracketEnd == -1) {
-    return null;
+    throw const FormatException('Unterminated bracket segment');
   }
 
   int colonIndex = bracketEnd + 1;
@@ -53,6 +69,7 @@ ArrayHeaderParseResult? parseArrayHeaderLine(
   final braceStart = findUnquotedChar(content, openBrace, bracketEnd);
   if (braceStart != -1 &&
       braceStart < findUnquotedChar(content, colon, bracketEnd)) {
+    _assertNoGap(content, bracketEnd + 1, braceStart, 'field list');
     final foundBraceEnd = findMatchingBrace(content, braceStart);
     if (foundBraceEnd != -1) {
       braceEnd = foundBraceEnd + 1;
@@ -65,12 +82,24 @@ ArrayHeaderParseResult? parseArrayHeaderLine(
     bracketEnd > braceEnd ? bracketEnd : braceEnd,
   );
   if (colonIndex == -1) {
-    return null;
+    throw const FormatException('Missing colon after array header');
   }
+  _assertNoGap(
+    content,
+    bracketEnd + 1 > braceEnd ? bracketEnd + 1 : braceEnd,
+    colonIndex,
+    'colon',
+  );
 
   String? key;
   if (bracketStart > 0) {
-    final rawKey = content.substring(0, bracketStart).trim();
+    final rawKey = content.substring(0, bracketStart);
+    // Trimming would silently turn `foo [2]:` into a header with key `foo`.
+    if (rawKey != rawKey.trimRight()) {
+      throw const FormatException(
+        'Unexpected whitespace between key and bracket segment',
+      );
+    }
     key = rawKey.startsWith(doubleQuote) ? parseStringLiteral(rawKey) : rawKey;
   }
 
@@ -78,15 +107,10 @@ ArrayHeaderParseResult? parseArrayHeaderLine(
 
   final bracketContent = content.substring(bracketStart + 1, bracketEnd);
 
-  BracketSegmentResult parsedBracket;
-  try {
-    parsedBracket = parseBracketSegment(bracketContent, defaultDelimiter);
-  } catch (e) {
-    return null;
-  }
-
-  final length = parsedBracket.length;
-  final delimiter = parsedBracket.delimiter;
+  final (:length, :delimiter) = parseBracketSegment(
+    bracketContent,
+    defaultDelimiter,
+  );
 
   List<String>? fields;
   if (braceStart != -1 && braceStart < colonIndex) {
@@ -111,24 +135,35 @@ ArrayHeaderParseResult? parseArrayHeaderLine(
   );
 }
 
-BracketSegmentResult parseBracketSegment(String seg, String defaultDelimiter) {
-  String content = seg;
+final _bracketLength = RegExp(r'^(?:0|[1-9]\d*)$');
 
-  String delimiter = defaultDelimiter;
-  if (content.endsWith(tab)) {
-    delimiter = tab;
-    content = content.substring(0, content.length - 1);
-  } else if (content.endsWith(pipe)) {
-    delimiter = pipe;
+({int length, String delimiter}) parseBracketSegment(
+  String segment,
+  String defaultDelimiter,
+) {
+  var content = segment;
+
+  var delimiter = defaultDelimiter;
+  if (content.endsWith(tab) || content.endsWith(pipe)) {
+    delimiter = content[content.length - 1];
     content = content.substring(0, content.length - 1);
   }
 
-  final length = int.tryParse(content);
-  if (length == null) {
-    throw FormatException('Invalid array length: $seg');
+  if (!_bracketLength.hasMatch(content)) {
+    throw FormatException('Invalid array length: "$segment"');
   }
 
-  return BracketSegmentResult(length: length, delimiter: delimiter);
+  // A length beyond the int range can never match a count.
+  return (length: int.tryParse(content) ?? -1, delimiter: delimiter);
+}
+
+void _assertNoGap(String content, int start, int end, String target) {
+  final gap = content.substring(start, end);
+  if (gap.isNotEmpty) {
+    throw FormatException(
+      'Unexpected "$gap" between bracket segment and $target',
+    );
+  }
 }
 
 // #endregion

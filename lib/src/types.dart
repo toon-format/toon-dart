@@ -64,13 +64,6 @@ class ArrayHeaderParseResult {
   const ArrayHeaderParseResult({required this.header, this.inlineValues});
 }
 
-class BracketSegmentResult {
-  final int length;
-  final String delimiter;
-
-  const BracketSegmentResult({required this.length, required this.delimiter});
-}
-
 class KeyTokenResult {
   final String key;
   final int end;
