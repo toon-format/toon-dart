@@ -1,6 +1,6 @@
 # TOON for Dart
 
-[![SPEC v1.4](https://img.shields.io/badge/spec-v1.4-lightgrey)](https://github.com/toon-format/spec/blob/v1.4.0/SPEC.md)
+[![SPEC v4.3](https://img.shields.io/badge/spec-v4.3-lightgrey)](https://github.com/toon-format/spec/blob/v4.3.0/SPEC.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
 Encodes Dart values to [TOON (Token-Oriented Object Notation)](https://github.com/toon-format/toon) and decodes TOON back. TOON is a compact, indentation-based encoding of the JSON data model for LLM input.
@@ -46,10 +46,11 @@ Pass `EncodeOptions` to `encode` and `DecodeOptions` to `decode`, e.g. `encode(d
 
 ## Specification
 
-Targets [TOON spec v1.4](https://github.com/toon-format/spec/blob/v1.4.0/SPEC.md). The test suite runs the spec's conformance fixtures.
+Targets [TOON spec v4.3](https://github.com/toon-format/spec/blob/v4.3.0/SPEC.md), and the test suite runs the spec's conformance fixtures.
 
-- **Numbers decode to `double`** – a token that overflows `double` (e.g. `1e999`) stays a string, and integers beyond 2^53 lose precision ([§4](https://github.com/toon-format/spec/blob/v1.4.0/SPEC.md#4-decoding-interpretation-reference-decoder))
-- **Host values normalize to the JSON model** – `NaN` and infinities → `null`, `-0.0` → `0`, `BigInt` → number within ±(2^53 − 1) and a quoted decimal string beyond, `DateTime` → ISO 8601 string, `Set` → array, `Map` keys → `toString()`, anything else → `null` ([§3](https://github.com/toon-format/spec/blob/v1.4.0/SPEC.md#3-encoding-normalization-reference-encoder))
+- **Numbers decode to `double`** – integers beyond 2^53 lose precision and a token that overflows `double` (e.g. `1e999`) decodes as a string ([§4](https://github.com/toon-format/spec/blob/v4.3.0/SPEC.md#4-decoding-interpretation-reference-decoder))
+- **Host values normalize to the JSON model** – `NaN` and infinities → `null`, `-0.0` → `0`, `BigInt` → number within ±(2^53 − 1) and a quoted decimal string beyond, `DateTime` → ISO 8601 string, `Set` → array, `Map` keys → `toString()`, anything else → `null`; a string or key with an unpaired surrogate throws an `ArgumentError` ([§3](https://github.com/toon-format/spec/blob/v4.3.0/SPEC.md#3-encoding-normalization-reference-encoder))
+- **Tabs in indentation are a strict-mode error** – in non-strict mode each leading tab counts as one indentation level, on top of the leading spaces divided by `indentSize` ([§12](https://github.com/toon-format/spec/blob/v4.3.0/SPEC.md#12-indentation-and-whitespace))
 
 ## Resources
 
