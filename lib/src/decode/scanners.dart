@@ -47,10 +47,6 @@ class LineCursor {
 }
 
 ScanResult toParsedLines(String source, int indentSize, bool strict) {
-  if (source.trim().isEmpty) {
-    return const ScanResult(lines: [], blankLines: []);
-  }
-
   final lines = source.split('\n');
   final parsed = <ParsedLine>[];
   final blankLines = <BlankLineInfo>[];
@@ -65,30 +61,35 @@ ScanResult toParsedLines(String source, int indentSize, bool strict) {
     if (raw.endsWith(carriageReturn)) {
       raw = raw.substring(0, raw.length - 1);
     }
-    int indent = 0;
-    while (indent < raw.length && raw[indent] == space) {
-      indent++;
+    var whitespaceEnd = 0;
+    while (whitespaceEnd < raw.length &&
+        (raw[whitespaceEnd] == space || raw[whitespaceEnd] == tab)) {
+      whitespaceEnd++;
     }
+    final leadingWhitespace = raw.substring(0, whitespaceEnd);
+    final firstTabIndex = leadingWhitespace.indexOf(tab);
 
-    final content = raw.substring(indent);
+    // Strict rejects tab indentation below, so only the spaces before the
+    // first tab are indentation there.
+    final indent = strict && firstTabIndex != -1
+        ? firstTabIndex
+        : whitespaceEnd;
+    // Non-strict input may indent with tabs, each counting as one depth level.
+    final tabIndent = strict || firstTabIndex == -1
+        ? 0
+        : tab.allMatches(leadingWhitespace).length;
+    final content = _trimTrailingSpaces(raw.substring(indent));
+    final depth = (indent - tabIndent) ~/ indentSize + tabIndent;
 
-    if (content.trim().isEmpty) {
-      final depth = computeDepthFromIndent(indent, indentSize);
+    if (content.isEmpty) {
       blankLines.add(
         BlankLineInfo(lineNumber: lineNumber, indent: indent, depth: depth),
       );
       continue;
     }
 
-    final depth = computeDepthFromIndent(indent, indentSize);
-
     if (strict) {
-      int wsEnd = 0;
-      while (wsEnd < raw.length && (raw[wsEnd] == space || raw[wsEnd] == tab)) {
-        wsEnd++;
-      }
-
-      if (raw.substring(0, wsEnd).contains(tab)) {
+      if (firstTabIndex != -1) {
         throw FormatException(
           'Line $lineNumber: Tabs are not allowed in indentation in strict mode',
         );
@@ -115,6 +116,10 @@ ScanResult toParsedLines(String source, int indentSize, bool strict) {
   return ScanResult(lines: parsed, blankLines: blankLines);
 }
 
-int computeDepthFromIndent(int indentSpaces, int indentSize) {
-  return indentSpaces ~/ indentSize;
+String _trimTrailingSpaces(String value) {
+  var end = value.length;
+  while (end > 0 && value.codeUnitAt(end - 1) == 0x20) {
+    end--;
+  }
+  return value.substring(0, end);
 }
