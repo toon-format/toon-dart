@@ -165,7 +165,7 @@ void decodeField(
     );
   }
 
-  final (:key, :end) = parseKeyToken(content, 0);
+  final (:key, :end) = parseKeyToken(content);
   final rest = trimSpaces(content.substring(end));
   _assertNewKey(obj, key, options.strict);
 
@@ -387,7 +387,7 @@ JsonObject decodeKeyedObject(
     startLine ??= line.lineNumber;
     endLine = line.lineNumber;
 
-    final (:key, :end) = parseKeyToken(line.content, 0);
+    final (:key, :end) = parseKeyToken(line.content);
     _assertNewKey(obj, key, options.strict);
 
     final cells = trimSpaces(line.content.substring(end));

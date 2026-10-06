@@ -368,29 +368,36 @@ String parseStringLiteral(String token) {
   return trimmedToken;
 }
 
-({String key, int end}) parseUnquotedKey(String content, int start) {
+/// Parses the key of the key-value line [content] and returns it with the
+/// index after its colon.
+({String key, int end}) parseKeyToken(String content) {
+  return content.startsWith(doubleQuote)
+      ? _parseQuotedKey(content)
+      : _parseUnquotedKey(content);
+}
+
+({String key, int end}) _parseUnquotedKey(String content) {
   // A raw scan would cut `a "b:c" d: 1` at the quoted colon.
-  final colonIndex = findUnquotedChar(content, colon, start);
+  final colonIndex = findUnquotedChar(content, colon);
   if (colonIndex == -1) {
     throw const FormatException('Missing colon after key');
   }
 
   return (
-    key: trimSpaces(content.substring(start, colonIndex)),
+    key: trimSpaces(content.substring(0, colonIndex)),
     end: colonIndex + 1,
   );
 }
 
-({String key, int end}) parseQuotedKey(String content, int start) {
-  final closingQuoteIndex = findClosingQuote(content, start);
+({String key, int end}) _parseQuotedKey(String content) {
+  final closingQuoteIndex = findClosingQuote(content, 0);
 
   if (closingQuoteIndex == -1) {
     throw const FormatException('Unterminated quoted key');
   }
 
-  final keyContent = content.substring(start + 1, closingQuoteIndex);
-  final key = unescapeString(keyContent);
-  int end = closingQuoteIndex + 1;
+  final key = unescapeString(content.substring(1, closingQuoteIndex));
+  var end = closingQuoteIndex + 1;
   while (end < content.length && content[end] == space) {
     end++;
   }
@@ -401,14 +408,6 @@ String parseStringLiteral(String token) {
   end++;
 
   return (key: key, end: end);
-}
-
-({String key, int end}) parseKeyToken(String content, int start) {
-  if (content[start] == doubleQuote) {
-    return parseQuotedKey(content, start);
-  } else {
-    return parseUnquotedKey(content, start);
-  }
 }
 
 bool isArrayHeaderContent(String content) {
