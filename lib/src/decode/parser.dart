@@ -9,7 +9,7 @@ import '../utilities/string_utils.dart';
 ArrayHeaderParseResult? resolveArrayHeader(String content, bool strict) {
   final ArrayHeaderParseResult? result;
   try {
-    result = parseArrayHeaderLine(content, defaultDelimiter);
+    result = parseArrayHeaderLine(content);
   } on FormatException {
     if (strict) rethrow;
     return null;
@@ -36,13 +36,10 @@ void _assertUniqueFieldNames(List<FieldNode> fields) {
 
 /// Returns null when [content] is no header line and throws a
 /// [FormatException] when it is an invalid one.
-ArrayHeaderParseResult? parseArrayHeaderLine(
-  String content,
-  String defaultDelimiter,
-) {
+ArrayHeaderParseResult? parseArrayHeaderLine(String content) {
   final trimmed = content.trimLeft();
 
-  int bracketStart = -1;
+  final int bracketStart;
 
   // A quoted key may contain brackets, so search after its closing quote.
   if (trimmed.startsWith(doubleQuote)) {
@@ -80,33 +77,25 @@ ArrayHeaderParseResult? parseArrayHeaderLine(
     throw const FormatException('Unterminated bracket segment');
   }
 
-  int colonIndex = bracketEnd + 1;
-  int braceEnd = colonIndex;
-
+  var headerEnd = bracketEnd + 1;
+  String? fieldsContent;
   final braceStart = findUnquotedChar(content, openBrace, bracketEnd);
   if (braceStart != -1 &&
       braceStart < findUnquotedChar(content, colon, bracketEnd)) {
     _assertNoGap(content, bracketEnd + 1, braceStart, 'field list');
-    final foundBraceEnd = findMatchingBrace(content, braceStart);
-    if (foundBraceEnd != -1) {
-      braceEnd = foundBraceEnd + 1;
+    final braceEnd = findMatchingBrace(content, braceStart);
+    if (braceEnd == -1) {
+      throw const FormatException('Unmatched brace in field list');
     }
+    fieldsContent = content.substring(braceStart + 1, braceEnd);
+    headerEnd = braceEnd + 1;
   }
 
-  colonIndex = findUnquotedChar(
-    content,
-    colon,
-    bracketEnd > braceEnd ? bracketEnd : braceEnd,
-  );
+  final colonIndex = findUnquotedChar(content, colon, headerEnd);
   if (colonIndex == -1) {
     throw const FormatException('Missing colon after array header');
   }
-  _assertNoGap(
-    content,
-    bracketEnd + 1 > braceEnd ? bracketEnd + 1 : braceEnd,
-    colonIndex,
-    'colon',
-  );
+  _assertNoGap(content, headerEnd, colonIndex, 'colon');
 
   String? key;
   if (bracketStart > 0) {
@@ -124,26 +113,18 @@ ArrayHeaderParseResult? parseArrayHeaderLine(
 
   final bracketContent = content.substring(bracketStart + 1, bracketEnd);
 
-  final (:length, :delimiter, :keyed) = parseBracketSegment(
-    bracketContent,
-    defaultDelimiter,
-  );
+  final (:length, :delimiter, :keyed) = parseBracketSegment(bracketContent);
 
   List<FieldNode>? fields;
-  if (braceStart != -1 && braceStart < colonIndex) {
-    final foundBraceEnd = findMatchingBrace(content, braceStart);
-    if (foundBraceEnd != -1 && foundBraceEnd < colonIndex) {
-      final fieldsContent = content.substring(braceStart + 1, foundBraceEnd);
-      for (final other in const [comma, tab, pipe]) {
-        if (other != delimiter &&
-            findUnquotedChar(fieldsContent, other) != -1) {
-          throw FormatException(
-            'Header delimiter mismatch: field list contains unquoted "${escapeString(other)}"',
-          );
-        }
+  if (fieldsContent != null) {
+    for (final other in const [comma, tab, pipe]) {
+      if (other != delimiter && findUnquotedChar(fieldsContent, other) != -1) {
+        throw FormatException(
+          'Header delimiter mismatch: field list contains unquoted "${escapeString(other)}"',
+        );
       }
-      fields = parseFieldEntries(fieldsContent, delimiter);
     }
+    fields = parseFieldEntries(fieldsContent, delimiter);
   }
 
   if (keyed && fields == null) {
@@ -173,7 +154,6 @@ final _bracketLength = RegExp(r'^(?:0|[1-9]\d*)$');
 
 ({int length, String delimiter, bool keyed}) parseBracketSegment(
   String segment,
-  String defaultDelimiter,
 ) {
   var content = segment;
 
