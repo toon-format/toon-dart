@@ -11,7 +11,9 @@ bool isSafeUnquoted(String value, [String delimiter = comma]) {
     return false;
   }
 
-  if (value != value.trim()) {
+  // Only space and tab force quoting; Dart's trim() also strips other Unicode
+  // whitespace that decoders keep.
+  if (RegExp(r'^[ \t]|[ \t]$').hasMatch(value)) {
     return false;
   }
 

@@ -1,6 +1,7 @@
 import '../options.dart';
 import '../types.dart';
 import '../utilities/constants.dart';
+import '../utilities/string_utils.dart';
 import 'normalize.dart';
 import 'primitives.dart';
 import 'writer.dart';
@@ -8,6 +9,11 @@ import 'writer.dart';
 // #region Encode normalized JsonValue
 
 String encodeValue(JsonValue value, EncodeOptions options) {
+  // Unquoted, a leading U+FEFF would be read as the document's byte-order mark
+  // and stripped on decode.
+  if (value is String && value.startsWith(byteOrderMark)) {
+    return '$doubleQuote${escapeString(value)}$doubleQuote';
+  }
   if (isJsonPrimitive(value)) {
     return encodePrimitive(value, options.delimiter);
   }

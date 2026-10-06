@@ -39,6 +39,7 @@ const String doubleQuote = '"';
 const String newline = '\n';
 const String carriageReturn = '\r';
 const String tab = '\t';
+const String byteOrderMark = '\uFEFF';
 
 // #endregion
 
