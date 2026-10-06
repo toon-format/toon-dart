@@ -15,15 +15,19 @@ JsonValue decodeValueFromLines(LineCursor cursor, DecodeOptions options) {
   if (first == null) {
     return <String, JsonValue>{};
   }
+  final content = first.content;
 
-  if (first.content == '[]') {
+  if (content == '[]') {
     cursor.advance();
     assertFullyConsumed(cursor, options.strict);
     return <JsonValue>[];
   }
 
-  if (isArrayHeaderContent(first.content)) {
-    final headerInfo = resolveArrayHeader(first.content, options.strict);
+  if (isArrayHeaderContent(content)) {
+    final headerInfo = _withLine(
+      first,
+      () => resolveArrayHeader(content, options.strict),
+    );
     if (headerInfo != null) {
       cursor.advance();
       final array = decodeArrayFromHeader(
@@ -38,11 +42,20 @@ JsonValue decodeValueFromLines(LineCursor cursor, DecodeOptions options) {
     }
   }
 
-  if (cursor.length == 1 && !isKeyValueContent(first.content)) {
-    return parsePrimitiveToken(first.content);
+  if (cursor.length == 1 && !isKeyValueContent(content)) {
+    return _withLine(first, () => parsePrimitiveToken(content));
   }
 
   return decodeObject(cursor, 0, options);
+}
+
+/// Parser helpers don't know their line; this prefixes it to their errors.
+T _withLine<T>(ParsedLine line, T Function() parse) {
+  try {
+    return parse();
+  } on FormatException catch (e) {
+    throw FormatException('Line ${line.lineNumber}: ${e.message}');
+  }
 }
 
 void assertNoDepthJump(ParsedLine nestedLine, int parentDepth, bool strict) {
@@ -143,10 +156,12 @@ void decodeField(
   DecodeOptions options,
   JsonObject obj,
 ) {
-  if (resolveArrayHeader(content, options.strict) case final result?) {
+  final line = cursor.current!;
+  if (_withLine(line, () => resolveArrayHeader(content, options.strict))
+      case final result?) {
     final header = result.header;
     if (header.key case final key?) {
-      _assertNewKey(obj, key, options.strict);
+      _assertNewKey(obj, key, line, options.strict);
       obj[key] = decodeArrayFromHeader(
         header,
         result.inlineValues,
@@ -159,15 +174,15 @@ void decodeField(
     if (options.strict) {
       throw FormatException(
         header.keyed
-            ? 'Keyless keyed header is only valid at the document root'
-            : 'Keyless array header is only valid at the document root or as a list item',
+            ? 'Line ${line.lineNumber}: Keyless keyed header is only valid at the document root'
+            : 'Line ${line.lineNumber}: Keyless array header is only valid at the document root or as a list item',
       );
     }
   }
 
-  final (:key, :end) = parseKeyToken(content);
+  final (:key, :end) = _withLine(line, () => parseKeyToken(content));
   final rest = trimSpaces(content.substring(end));
-  _assertNewKey(obj, key, options.strict);
+  _assertNewKey(obj, key, line, options.strict);
 
   if (rest.isEmpty) {
     final nextLine = cursor.peek();
@@ -180,14 +195,18 @@ void decodeField(
     return;
   }
 
-  obj[key] = rest == '[]' ? <JsonValue>[] : parsePrimitiveToken(rest);
+  obj[key] = rest == '[]'
+      ? <JsonValue>[]
+      : _withLine(line, () => parsePrimitiveToken(rest));
 }
 
 /// Strict mode rejects duplicate sibling keys; non-strict mode lets the last
 /// write win.
-void _assertNewKey(JsonObject obj, String key, bool strict) {
+void _assertNewKey(JsonObject obj, String key, ParsedLine line, bool strict) {
   if (strict && obj.containsKey(key)) {
-    throw FormatException('Duplicate sibling key "$key"');
+    throw FormatException(
+      'Line ${line.lineNumber}: Duplicate sibling key "$key"',
+    );
   }
 }
 
@@ -203,7 +222,12 @@ JsonValue decodeArrayFromHeader(
   }
 
   if (inlineValues != null) {
-    return decodeInlinePrimitiveArray(header, inlineValues, options);
+    return decodeInlinePrimitiveArray(
+      header,
+      inlineValues,
+      cursor.current!,
+      options,
+    );
   }
 
   if (header.fields != null) {
@@ -216,15 +240,21 @@ JsonValue decodeArrayFromHeader(
 List<JsonPrimitive> decodeInlinePrimitiveArray(
   ArrayHeaderInfo header,
   String inlineValues,
+  ParsedLine headerLine,
   DecodeOptions options,
 ) {
-  final values = parseDelimitedValues(inlineValues, header.delimiter);
-  final primitives = mapRowValuesToPrimitives(values);
+  final primitives = _withLine(
+    headerLine,
+    () => mapRowValuesToPrimitives(
+      parseDelimitedValues(inlineValues, header.delimiter),
+    ),
+  );
 
   assertExpectedCount(
     primitives.length,
     header.length,
     'inline array items',
+    headerLine,
     options,
   );
 
@@ -266,7 +296,13 @@ List<JsonValue> decodeListArray(
     endLine = cursor.current!.lineNumber;
   }
 
-  assertExpectedCount(items.length, header.length, 'list array items', options);
+  assertExpectedCount(
+    items.length,
+    header.length,
+    'list array items',
+    cursor.current!,
+    options,
+  );
 
   if (options.strict && startLine != null && endLine != null) {
     validateNoBlankLinesInRange(
@@ -318,12 +354,20 @@ List<JsonObject> decodeTabularArray(
       values.length,
       leafCount,
       'tabular row values',
+      line,
       options,
     );
-    objects.add(objectFromFields(fields, mapRowValuesToPrimitives(values)));
+    final cells = _withLine(line, () => mapRowValuesToPrimitives(values));
+    objects.add(objectFromFields(fields, cells));
   }
 
-  assertExpectedCount(objects.length, header.length, 'tabular rows', options);
+  assertExpectedCount(
+    objects.length,
+    header.length,
+    'tabular rows',
+    cursor.current!,
+    options,
+  );
 
   if (options.strict && startLine != null && endLine != null) {
     validateNoBlankLinesInRange(
@@ -377,18 +421,31 @@ JsonObject decodeKeyedObject(
     startLine ??= line.lineNumber;
     endLine = line.lineNumber;
 
-    final (:key, :end) = parseKeyToken(line.content);
-    _assertNewKey(obj, key, options.strict);
+    final (:key, :end) = _withLine(line, () => parseKeyToken(line.content));
+    _assertNewKey(obj, key, line, options.strict);
 
     final values = parseDelimitedValues(
       trimSpaces(line.content.substring(end)),
       header.delimiter,
     );
-    assertExpectedCount(values.length, leafCount, 'keyed entry cells', options);
-    obj[key] = objectFromFields(fields, mapRowValuesToPrimitives(values));
+    assertExpectedCount(
+      values.length,
+      leafCount,
+      'keyed entry cells',
+      line,
+      options,
+    );
+    final cells = _withLine(line, () => mapRowValuesToPrimitives(values));
+    obj[key] = objectFromFields(fields, cells);
   }
 
-  assertExpectedCount(obj.length, header.length, 'keyed entries', options);
+  assertExpectedCount(
+    obj.length,
+    header.length,
+    'keyed entries',
+    cursor.current!,
+    options,
+  );
 
   if (options.strict && startLine != null && endLine != null) {
     validateNoBlankLinesInRange(
@@ -418,7 +475,8 @@ JsonValue decodeListItem(
   }
 
   if (isArrayHeaderContent(afterHyphen)) {
-    if (resolveArrayHeader(afterHyphen, options.strict) case final result?) {
+    if (_withLine(line, () => resolveArrayHeader(afterHyphen, options.strict))
+        case final result?) {
       final header = result.header;
       if (header.fields == null) {
         return decodeArrayFromHeader(
@@ -433,8 +491,8 @@ JsonValue decodeListItem(
       if (options.strict) {
         throw FormatException(
           header.keyed
-              ? 'Keyless keyed header is only valid at the document root'
-              : 'Keyless header with a field list is only valid at the document root',
+              ? 'Line ${line.lineNumber}: Keyless keyed header is only valid at the document root'
+              : 'Line ${line.lineNumber}: Keyless header with a field list is only valid at the document root',
         );
       }
     }
@@ -444,7 +502,7 @@ JsonValue decodeListItem(
     return decodeObjectFromListItem(afterHyphen, cursor, baseDepth, options);
   }
 
-  return parsePrimitiveToken(afterHyphen);
+  return _withLine(line, () => parsePrimitiveToken(afterHyphen));
 }
 
 JsonObject decodeObjectFromListItem(

@@ -1,4 +1,5 @@
 import '../options.dart';
+import '../types.dart';
 import '../utilities/constants.dart';
 import '../utilities/string_utils.dart';
 
@@ -6,10 +7,13 @@ void assertExpectedCount(
   int actual,
   int expected,
   String itemType,
+  ParsedLine line,
   DecodeOptions options,
 ) {
   if (options.strict && actual != expected) {
-    throw FormatException('Expected $expected $itemType, but got $actual');
+    throw FormatException(
+      'Line ${line.lineNumber}: Expected $expected $itemType, but got $actual',
+    );
   }
 }
 

@@ -9,6 +9,7 @@
 - `encode` throws an `ArgumentError` on a string or key with an unpaired surrogate
 - `encode` and `decode` throw an `ArgumentError` on an `indentSize` below 1, also in release builds
 - `decode` returns zero as a `double`, like every other number
+- Every `decode` error message starts with its line number
 
 ## 0.1.0
 
