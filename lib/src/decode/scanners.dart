@@ -56,8 +56,11 @@ ScanResult toParsedLines(String source, int indentSize, bool strict) {
   final blankLines = <BlankLineInfo>[];
 
   for (int i = 0; i < lines.length; i++) {
-    final raw = lines[i];
+    var raw = lines[i];
     final lineNumber = i + 1;
+    if (i == 0 && raw.startsWith(byteOrderMark)) {
+      raw = raw.substring(1);
+    }
     int indent = 0;
     while (indent < raw.length && raw[indent] == space) {
       indent++;
