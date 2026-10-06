@@ -37,29 +37,7 @@ void _assertUniqueFieldNames(List<FieldNode> fields) {
 /// Returns null when [content] is no header line and throws a
 /// [FormatException] when it is an invalid one.
 ArrayHeaderParseResult? parseArrayHeaderLine(String content) {
-  final trimmed = content.trimLeft();
-
-  final int bracketStart;
-
-  // A quoted key may contain brackets, so search after its closing quote.
-  if (trimmed.startsWith(doubleQuote)) {
-    final closingQuoteIndex = findClosingQuote(trimmed, 0);
-    if (closingQuoteIndex == -1) {
-      return null;
-    }
-
-    final afterQuote = trimmed.substring(closingQuoteIndex + 1);
-    if (!afterQuote.startsWith(openBracket)) {
-      return null;
-    }
-
-    final leadingWhitespace = content.length - trimmed.length;
-    final keyEndIndex = leadingWhitespace + closingQuoteIndex + 1;
-    bracketStart = content.indexOf(openBracket, keyEndIndex);
-  } else {
-    bracketStart = findUnquotedChar(content, openBracket);
-  }
-
+  final bracketStart = findUnquotedChar(content, openBracket);
   if (bracketStart == -1) {
     return null;
   }
