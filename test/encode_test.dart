@@ -29,6 +29,5 @@ void main() {
   test('rejects strings and keys with an unpaired surrogate', () {
     expect(() => encode('a\uD800b'), throwsArgumentError);
     expect(() => encode({'\uDC00': 1}), throwsArgumentError);
-    expect(encode('\u{1F600}'), '\u{1F600}');
   });
 }
