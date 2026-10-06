@@ -112,15 +112,12 @@ ArrayHeaderParseResult? parseArrayHeaderLine(
     defaultDelimiter,
   );
 
-  List<String>? fields;
+  List<FieldNode>? fields;
   if (braceStart != -1 && braceStart < colonIndex) {
     final foundBraceEnd = findMatchingBrace(content, braceStart);
     if (foundBraceEnd != -1 && foundBraceEnd < colonIndex) {
       final fieldsContent = content.substring(braceStart + 1, foundBraceEnd);
-      fields = parseDelimitedValues(
-        fieldsContent,
-        delimiter,
-      ).map((field) => parseStringLiteral(trimSpaces(field))).toList();
+      fields = parseFieldEntries(fieldsContent, delimiter);
     }
   }
 
@@ -167,6 +164,71 @@ void _assertNoGap(String content, int start, int end, String target) {
 }
 
 // #endregion
+
+/// Parses a field list, descending into nested field groups
+/// (`field{sub1,sub2}`).
+List<FieldNode> parseFieldEntries(String content, String delimiter) {
+  return [
+    for (final entry in _splitFieldEntries(content, delimiter))
+      _parseFieldEntry(trimSpaces(entry), delimiter),
+  ];
+}
+
+FieldNode _parseFieldEntry(String entry, String delimiter) {
+  final groupStart = findUnquotedChar(entry, openBrace);
+  if (groupStart == -1) return FieldNode(parseStringLiteral(entry));
+
+  final name = entry.substring(0, groupStart);
+  if (name.isEmpty) {
+    throw const FormatException('Missing field name before nested field group');
+  }
+  final groupEnd = findMatchingBrace(entry, groupStart);
+  if (groupEnd == -1) {
+    throw const FormatException('Unmatched brace in field list');
+  }
+  if (groupEnd != entry.length - 1) {
+    throw const FormatException('Unexpected content after nested field group');
+  }
+
+  return FieldNode(
+    parseStringLiteral(name),
+    parseFieldEntries(entry.substring(groupStart + 1, groupEnd), delimiter),
+  );
+}
+
+/// Splits a field list on [delimiter] outside quotes and nested groups.
+List<String> _splitFieldEntries(String content, String delimiter) {
+  final entries = <String>[];
+  var entryStart = 0;
+  var inQuotes = false;
+  var depth = 0;
+  for (var i = 0; i < content.length; i++) {
+    final char = content[i];
+    if (char == backslash && inQuotes) {
+      i++;
+    } else if (char == doubleQuote) {
+      inQuotes = !inQuotes;
+    } else if (!inQuotes && char == openBrace) {
+      depth++;
+    } else if (!inQuotes && char == closeBrace) {
+      depth--;
+    } else if (!inQuotes && depth == 0 && char == delimiter) {
+      entries.add(content.substring(entryStart, i));
+      entryStart = i + 1;
+    }
+  }
+  entries.add(content.substring(entryStart));
+  return entries;
+}
+
+/// Counts the leaf fields of [fields]: the number of cells per row.
+int countLeafFields(List<FieldNode> fields) {
+  var count = 0;
+  for (final field in fields) {
+    count += field.children == null ? 1 : countLeafFields(field.children!);
+  }
+  return count;
+}
 
 /// Returns the index of the brace closing the one at [braceStart], ignoring
 /// braces inside quoted names, or -1.

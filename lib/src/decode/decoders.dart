@@ -289,18 +289,15 @@ List<JsonObject> decodeTabularArray(
       final values = parseDelimitedValues(line.content, header.delimiter);
       assertExpectedCount(
         values.length,
-        header.fields!.length,
+        countLeafFields(header.fields!),
         'tabular row values',
         options,
       );
 
-      final primitives = mapRowValuesToPrimitives(values);
-      final obj = <String, JsonValue>{};
-
-      for (int i = 0; i < header.fields!.length; i++) {
-        obj[header.fields![i]] = primitives[i];
-      }
-
+      final obj = objectFromFields(
+        header.fields!,
+        mapRowValuesToPrimitives(values),
+      );
       objects.add(obj);
     } else {
       break;
@@ -413,6 +410,30 @@ JsonObject decodeObjectFromListItem(
   }
 
   return obj;
+}
+
+// #endregion
+
+// #region Shared decoder helpers
+
+/// Builds a row object from [cells] in depth-first field order.
+JsonObject objectFromFields(List<FieldNode> fields, List<JsonPrimitive> cells) {
+  var cellIndex = 0;
+
+  JsonObject walk(List<FieldNode> nodes) {
+    final obj = <String, JsonValue>{};
+    for (final node in nodes) {
+      if (node.children case final children?) {
+        obj[node.name] = walk(children);
+      } else if (cellIndex < cells.length) {
+        // A non-strict width mismatch leaves trailing leaves absent.
+        obj[node.name] = cells[cellIndex++];
+      }
+    }
+    return obj;
+  }
+
+  return walk(fields);
 }
 
 // #endregion

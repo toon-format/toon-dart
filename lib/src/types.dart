@@ -47,7 +47,7 @@ class ArrayHeaderInfo {
   final String? key;
   final int length;
   final String delimiter;
-  final List<String>? fields;
+  final List<FieldNode>? fields;
 
   const ArrayHeaderInfo({
     this.key,
