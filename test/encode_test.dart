@@ -6,6 +6,7 @@ void main() {
     final value = {
       'big': BigInt.parse('12345678901234567890'),
       'small': BigInt.from(42),
+      'largeInt': 9007199254740993,
       'date': DateTime.utc(2025, 1, 2, 3, 4, 5),
       'set': {1, 2},
       'negZero': -0.0,
@@ -17,6 +18,7 @@ void main() {
       encode(value),
       'big: "12345678901234567890"\n'
       'small: 42\n'
+      'largeInt: "9007199254740993"\n'
       'date: "2025-01-02T03:04:05.000Z"\n'
       'set[2]: 1,2\n'
       'negZero: 0\n'

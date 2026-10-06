@@ -1,8 +1,13 @@
 import '../types.dart';
 
-// 2^53 − 1: beyond it a double loses integer precision, so a larger BigInt
+// 2^53 − 1: beyond it a double loses integer precision, so a larger integer
 // encodes as a string.
-final _maxSafeInteger = BigInt.from(9007199254740991);
+const _maxSafeInteger = 9007199254740991;
+final _maxSafeBigInt = BigInt.from(_maxSafeInteger);
+
+// Compiled to JavaScript, every number is a double, so an integral double
+// matches `int()` and must still encode as a number.
+const _intsAreDoubles = identical(0, 0.0);
 
 JsonValue normalizeValue(Object? value) {
   return switch (value) {
@@ -10,8 +15,12 @@ JsonValue normalizeValue(Object? value) {
     String() => _assertNoLoneSurrogate(value),
     num() when !value.isFinite => null,
     num() when value == 0 && value.isNegative => 0,
+    int()
+        when !_intsAreDoubles &&
+            (value > _maxSafeInteger || value < -_maxSafeInteger) =>
+      value.toString(),
     num() => value,
-    BigInt() when value.abs() <= _maxSafeInteger => value.toInt(),
+    BigInt() when value.abs() <= _maxSafeBigInt => value.toInt(),
     BigInt() => value.toString(),
     DateTime() => value.toIso8601String(),
     List() => value.map(normalizeValue).toList(),
