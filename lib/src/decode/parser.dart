@@ -208,11 +208,11 @@ String parseStringLiteral(String token) {
     final closingQuoteIndex = findClosingQuote(trimmedToken, 0);
 
     if (closingQuoteIndex == -1) {
-      throw FormatException('Unterminated string: missing closing quote');
+      throw const FormatException('Unterminated string: missing closing quote');
     }
 
     if (closingQuoteIndex != trimmedToken.length - 1) {
-      throw FormatException('Unexpected characters after closing quote');
+      throw const FormatException('Unexpected characters after closing quote');
     }
 
     final content = trimmedToken.substring(1, closingQuoteIndex);
@@ -229,7 +229,7 @@ KeyTokenResult parseUnquotedKey(String content, int start) {
   }
 
   if (end >= content.length || content[end] != colon) {
-    throw FormatException('Missing colon after key');
+    throw const FormatException('Missing colon after key');
   }
 
   final key = content.substring(start, end).trim();
@@ -243,7 +243,7 @@ KeyTokenResult parseQuotedKey(String content, int start) {
   final closingQuoteIndex = findClosingQuote(content, start);
 
   if (closingQuoteIndex == -1) {
-    throw FormatException('Unterminated quoted key');
+    throw const FormatException('Unterminated quoted key');
   }
 
   final keyContent = content.substring(start + 1, closingQuoteIndex);
@@ -251,7 +251,7 @@ KeyTokenResult parseQuotedKey(String content, int start) {
   int end = closingQuoteIndex + 1;
 
   if (end >= content.length || content[end] != colon) {
-    throw FormatException('Missing colon after key');
+    throw const FormatException('Missing colon after key');
   }
   end++;
 

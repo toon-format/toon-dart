@@ -212,9 +212,7 @@ List<JsonValue> decodeListArray(
         line.content.startsWith(listItemPrefix) || line.content == '-';
 
     if (line.depth == itemDepth && isListItem) {
-      if (startLine == null) {
-        startLine = line.lineNumber;
-      }
+      startLine ??= line.lineNumber;
       endLine = line.lineNumber;
 
       final item = decodeListItem(cursor, itemDepth, options);
@@ -332,7 +330,9 @@ JsonValue decodeListItem(
   } else if (line.content.startsWith(listItemPrefix)) {
     afterHyphen = line.content.substring(listItemPrefix.length);
   } else {
-    throw FormatException('Expected list item to start with "$listItemPrefix"');
+    throw const FormatException(
+      'Expected list item to start with "$listItemPrefix"',
+    );
   }
 
   if (afterHyphen.trim().isEmpty) {

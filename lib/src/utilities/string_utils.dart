@@ -16,7 +16,7 @@ String unescapeString(String value) {
   while (i < value.length) {
     if (value[i] == backslash) {
       if (i + 1 >= value.length) {
-        throw FormatException(
+        throw const FormatException(
           'Invalid escape sequence: backslash at end of string',
         );
       }
