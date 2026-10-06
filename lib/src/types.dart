@@ -46,9 +46,7 @@ class ArrayHeaderInfo {
   });
 }
 
-class ArrayHeaderParseResult {
-  final ArrayHeaderInfo header;
-  final String? inlineValues;
-
-  const ArrayHeaderParseResult({required this.header, this.inlineValues});
-}
+typedef ArrayHeaderParseResult = ({
+  ArrayHeaderInfo header,
+  String? inlineValues,
+});

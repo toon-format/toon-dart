@@ -116,7 +116,7 @@ ArrayHeaderParseResult? parseArrayHeaderLine(String content) {
     );
   }
 
-  return ArrayHeaderParseResult(
+  return (
     header: ArrayHeaderInfo(
       key: key,
       length: length,
