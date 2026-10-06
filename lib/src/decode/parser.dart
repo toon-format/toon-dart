@@ -392,20 +392,20 @@ String parseStringLiteral(String token) {
   return trimmedToken;
 }
 
-KeyTokenResult parseUnquotedKey(String content, int start) {
+({String key, int end}) parseUnquotedKey(String content, int start) {
   // A raw scan would cut `a "b:c" d: 1` at the quoted colon.
   final colonIndex = findUnquotedChar(content, colon, start);
   if (colonIndex == -1) {
     throw const FormatException('Missing colon after key');
   }
 
-  return KeyTokenResult(
+  return (
     key: trimSpaces(content.substring(start, colonIndex)),
     end: colonIndex + 1,
   );
 }
 
-KeyTokenResult parseQuotedKey(String content, int start) {
+({String key, int end}) parseQuotedKey(String content, int start) {
   final closingQuoteIndex = findClosingQuote(content, start);
 
   if (closingQuoteIndex == -1) {
@@ -424,10 +424,10 @@ KeyTokenResult parseQuotedKey(String content, int start) {
   }
   end++;
 
-  return KeyTokenResult(key: key, end: end);
+  return (key: key, end: end);
 }
 
-KeyTokenResult parseKeyToken(String content, int start) {
+({String key, int end}) parseKeyToken(String content, int start) {
   if (content[start] == doubleQuote) {
     return parseQuotedKey(content, start);
   } else {

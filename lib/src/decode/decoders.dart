@@ -81,85 +81,66 @@ JsonObject decodeObject(
   int? computedDepth;
 
   while (!cursor.atEnd()) {
-    final line = cursor.peek();
-    if (line == null || line.depth < baseDepth) {
+    final line = cursor.peek()!;
+    if (line.depth < baseDepth) {
       break;
     }
 
-    if (computedDepth == null && line.depth >= baseDepth) {
-      computedDepth = line.depth;
-    }
-
-    if (computedDepth != null && line.depth == computedDepth) {
-      final pair = decodeKeyValuePair(line, cursor, computedDepth, options);
-      obj[pair.key] = pair.value;
-    } else {
+    computedDepth ??= line.depth;
+    if (line.depth != computedDepth) {
       break;
     }
+
+    cursor.advance();
+    decodeField(line.content, cursor, computedDepth, options, obj);
   }
 
   return obj;
 }
 
-KeyValueResult decodeKeyValue(
+/// Decodes the key-value line [content] and its nested lines into [obj].
+void decodeField(
   String content,
   LineCursor cursor,
   int baseDepth,
   DecodeOptions options,
+  JsonObject obj,
 ) {
   final arrayHeader = resolveArrayHeader(content, options.strict);
   if (arrayHeader != null && arrayHeader.header.key != null) {
-    final value = decodeArrayFromHeader(
+    final key = arrayHeader.header.key!;
+    _assertNewKey(obj, key, options.strict);
+    obj[key] = decodeArrayFromHeader(
       arrayHeader.header,
       arrayHeader.inlineValues,
       cursor,
       baseDepth,
       options,
     );
-    return KeyValueResult(
-      key: arrayHeader.header.key!,
-      value: value,
-      followDepth: baseDepth + 1,
-    );
+    return;
   }
 
-  final keyToken = parseKeyToken(content, 0);
-  final rest = trimSpaces(content.substring(keyToken.end));
+  final (:key, :end) = parseKeyToken(content, 0);
+  final rest = trimSpaces(content.substring(end));
+  _assertNewKey(obj, key, options.strict);
 
   if (rest.isEmpty) {
     final nextLine = cursor.peek();
-    if (nextLine != null && nextLine.depth > baseDepth) {
-      final nested = decodeObject(cursor, baseDepth + 1, options);
-      return KeyValueResult(
-        key: keyToken.key,
-        value: nested,
-        followDepth: baseDepth + 1,
-      );
-    }
-    return KeyValueResult(
-      key: keyToken.key,
-      value: const <String, JsonValue>{},
-      followDepth: baseDepth + 1,
-    );
+    obj[key] = nextLine != null && nextLine.depth > baseDepth
+        ? decodeObject(cursor, baseDepth + 1, options)
+        : <String, JsonValue>{};
+    return;
   }
 
-  final value = rest == '[]' ? <JsonValue>[] : parsePrimitiveToken(rest);
-  return KeyValueResult(
-    key: keyToken.key,
-    value: value,
-    followDepth: baseDepth + 1,
-  );
+  obj[key] = rest == '[]' ? <JsonValue>[] : parsePrimitiveToken(rest);
 }
 
-KeyValuePairResult decodeKeyValuePair(
-  ParsedLine line,
-  LineCursor cursor,
-  int baseDepth,
-  DecodeOptions options,
-) {
-  cursor.advance();
-  final result = decodeKeyValue(line.content, cursor, baseDepth, options);
-  return KeyValuePairResult(key: result.key, value: result.value);
+/// Strict mode rejects duplicate sibling keys; non-strict mode lets the last
+/// write win.
+void _assertNewKey(JsonObject obj, String key, bool strict) {
+  if (strict && obj.containsKey(key)) {
+    throw FormatException('Duplicate sibling key "$key"');
+  }
 }
 
 // #endregion
@@ -387,21 +368,20 @@ JsonObject decodeObjectFromListItem(
   // `baseDepth + 1`.
   final fieldDepth = baseDepth + 1;
   final afterHyphen = firstLine.content.substring(listItemPrefix.length);
-  final result = decodeKeyValue(afterHyphen, cursor, fieldDepth, options);
-
-  final obj = <String, JsonValue>{result.key: result.value};
+  final obj = <String, JsonValue>{};
+  decodeField(afterHyphen, cursor, fieldDepth, options, obj);
 
   while (!cursor.atEnd()) {
-    final line = cursor.peek();
-    if (line == null || line.depth < fieldDepth) {
+    final line = cursor.peek()!;
+    if (line.depth < fieldDepth) {
       break;
     }
 
     // A hyphen marks a list item only at item depth, so a `- ` line here is a
     // further field.
     if (line.depth == fieldDepth) {
-      final pair = decodeKeyValuePair(line, cursor, fieldDepth, options);
-      obj[pair.key] = pair.value;
+      cursor.advance();
+      decodeField(line.content, cursor, fieldDepth, options, obj);
     } else {
       break;
     }

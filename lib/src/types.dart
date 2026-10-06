@@ -63,29 +63,3 @@ class ArrayHeaderParseResult {
 
   const ArrayHeaderParseResult({required this.header, this.inlineValues});
 }
-
-class KeyTokenResult {
-  final String key;
-  final int end;
-
-  const KeyTokenResult({required this.key, required this.end});
-}
-
-class KeyValueResult {
-  final String key;
-  final JsonValue value;
-  final int followDepth;
-
-  const KeyValueResult({
-    required this.key,
-    required this.value,
-    required this.followDepth,
-  });
-}
-
-class KeyValuePairResult {
-  final String key;
-  final JsonValue value;
-
-  const KeyValuePairResult({required this.key, required this.value});
-}
