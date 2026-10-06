@@ -16,7 +16,7 @@ JsonValue decodeValueFromLines(LineCursor cursor, DecodeOptions options) {
     return <String, JsonValue>{};
   }
 
-  if (trimSpaces(first.content) == '[]') {
+  if (first.content == '[]') {
     cursor.advance();
     assertFullyConsumed(cursor, options.strict);
     return <JsonValue>[];
@@ -39,7 +39,7 @@ JsonValue decodeValueFromLines(LineCursor cursor, DecodeOptions options) {
   }
 
   if (cursor.length == 1 && !isKeyValueContent(first.content)) {
-    return parsePrimitiveToken(trimSpaces(first.content));
+    return parsePrimitiveToken(first.content);
   }
 
   return decodeObject(cursor, 0, options);
@@ -206,7 +206,7 @@ JsonValue decodeArrayFromHeader(
     return decodeInlinePrimitiveArray(header, inlineValues, options);
   }
 
-  if (header.fields != null && header.fields!.isNotEmpty) {
+  if (header.fields != null) {
     return decodeTabularArray(header, cursor, baseDepth, options);
   }
 
@@ -218,11 +218,6 @@ List<JsonPrimitive> decodeInlinePrimitiveArray(
   String inlineValues,
   DecodeOptions options,
 ) {
-  if (trimSpaces(inlineValues).isEmpty) {
-    assertExpectedCount(0, header.length, 'inline array items', options);
-    return [];
-  }
-
   final values = parseDelimitedValues(inlineValues, header.delimiter);
   final primitives = mapRowValuesToPrimitives(values);
 
@@ -426,61 +421,48 @@ JsonValue decodeListItem(
   int baseDepth,
   DecodeOptions options,
 ) {
-  final line = cursor.next();
-  if (line == null) {
-    throw StateError('Expected list item');
-  }
-
-  String afterHyphen;
-
-  if (line.content == '-') {
-    return <String, JsonValue>{};
-  } else if (line.content.startsWith(listItemPrefix)) {
-    afterHyphen = line.content.substring(listItemPrefix.length);
-  } else {
-    throw const FormatException(
-      'Expected list item to start with "$listItemPrefix"',
-    );
-  }
-
-  if (trimSpaces(afterHyphen).isEmpty) {
+  final line = cursor.next()!;
+  if (line.content == listItemMarker) {
     return <String, JsonValue>{};
   }
 
+  final afterHyphen = line.content.substring(listItemPrefix.length);
   if (trimSpaces(afterHyphen) == '[]') {
     return <JsonValue>[];
   }
 
   if (isArrayHeaderContent(afterHyphen)) {
-    final arrayHeader = resolveArrayHeader(afterHyphen, options.strict);
-    // There is no keyless keyed or fields-bearing list-item form.
-    if (arrayHeader?.header.fields != null && options.strict) {
-      throw FormatException(
-        arrayHeader!.header.keyed
-            ? 'Keyless keyed header is only valid at the document root'
-            : 'Keyless header with a field list is only valid at the document root',
-      );
-    }
-    if (arrayHeader != null && arrayHeader.header.fields == null) {
-      return decodeArrayFromHeader(
-        arrayHeader.header,
-        arrayHeader.inlineValues,
-        cursor,
-        baseDepth,
-        options,
-      );
+    if (resolveArrayHeader(afterHyphen, options.strict) case final result?) {
+      final header = result.header;
+      if (header.fields == null) {
+        return decodeArrayFromHeader(
+          header,
+          result.inlineValues,
+          cursor,
+          baseDepth,
+          options,
+        );
+      }
+      // There is no keyless keyed or fields-bearing list-item form.
+      if (options.strict) {
+        throw FormatException(
+          header.keyed
+              ? 'Keyless keyed header is only valid at the document root'
+              : 'Keyless header with a field list is only valid at the document root',
+        );
+      }
     }
   }
 
   if (isKeyValueContent(afterHyphen)) {
-    return decodeObjectFromListItem(line, cursor, baseDepth, options);
+    return decodeObjectFromListItem(afterHyphen, cursor, baseDepth, options);
   }
 
   return parsePrimitiveToken(afterHyphen);
 }
 
 JsonObject decodeObjectFromListItem(
-  ParsedLine firstLine,
+  String firstField,
   LineCursor cursor,
   int baseDepth,
   DecodeOptions options,
@@ -488,9 +470,8 @@ JsonObject decodeObjectFromListItem(
   // The first field's nested content sits at `baseDepth + 2`, its siblings at
   // `baseDepth + 1`.
   final fieldDepth = baseDepth + 1;
-  final afterHyphen = firstLine.content.substring(listItemPrefix.length);
   final obj = <String, JsonValue>{};
-  decodeField(afterHyphen, cursor, fieldDepth, options, obj);
+  decodeField(firstField, cursor, fieldDepth, options, obj);
 
   while (!cursor.atEnd) {
     final line = cursor.peek()!;
