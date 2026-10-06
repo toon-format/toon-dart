@@ -1,7 +1,7 @@
 import '../types.dart';
 import '../utilities/constants.dart';
-import '../utilities/literal-utils.dart';
-import '../utilities/string-utils.dart';
+import '../utilities/literal_utils.dart';
+import '../utilities/string_utils.dart';
 
 // #region Array header parsing
 

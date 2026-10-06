@@ -1,6 +1,6 @@
 import '../types.dart';
 import '../utilities/constants.dart';
-import '../utilities/string-utils.dart';
+import '../utilities/string_utils.dart';
 import '../utilities/validation.dart';
 
 // #region Primitive encoding

@@ -1,5 +1,5 @@
 import '../utilities/constants.dart';
-import 'literal-utils.dart';
+import 'literal_utils.dart';
 
 bool isValidUnquotedKey(String key) {
   // A letter or underscore, then letters, digits, underscores, or dots.
