@@ -9,11 +9,30 @@ import '../utilities/string_utils.dart';
 /// line. An invalid header throws in strict mode and falls through to a
 /// key-value line in non-strict mode.
 ArrayHeaderParseResult? resolveArrayHeader(String content, bool strict) {
+  final ArrayHeaderParseResult? result;
   try {
-    return parseArrayHeaderLine(content, defaultDelimiter);
+    result = parseArrayHeaderLine(content, defaultDelimiter);
   } on FormatException {
     if (strict) rethrow;
     return null;
+  }
+
+  // Non-strict mode resolves duplicate field names by last-write-wins.
+  if (strict && result?.header.fields != null) {
+    _assertUniqueFieldNames(result!.header.fields!);
+  }
+  return result;
+}
+
+void _assertUniqueFieldNames(List<FieldNode> fields) {
+  final seen = <String>{};
+  for (final field in fields) {
+    if (!seen.add(field.name)) {
+      throw FormatException(
+        'Duplicate field name "${field.name}" in field list',
+      );
+    }
+    if (field.children != null) _assertUniqueFieldNames(field.children!);
   }
 }
 
@@ -117,6 +136,14 @@ ArrayHeaderParseResult? parseArrayHeaderLine(
     final foundBraceEnd = findMatchingBrace(content, braceStart);
     if (foundBraceEnd != -1 && foundBraceEnd < colonIndex) {
       final fieldsContent = content.substring(braceStart + 1, foundBraceEnd);
+      for (final other in const [comma, tab, pipe]) {
+        if (other != delimiter &&
+            findUnquotedChar(fieldsContent, other) != -1) {
+          throw FormatException(
+            'Header delimiter mismatch: field list contains unquoted "${escapeString(other)}"',
+          );
+        }
+      }
       fields = parseFieldEntries(fieldsContent, delimiter);
     }
   }
@@ -175,12 +202,21 @@ List<FieldNode> parseFieldEntries(String content, String delimiter) {
 }
 
 FieldNode _parseFieldEntry(String entry, String delimiter) {
+  if (entry.isEmpty) {
+    throw const FormatException('Empty field name in field list');
+  }
+
   final groupStart = findUnquotedChar(entry, openBrace);
   if (groupStart == -1) return FieldNode(parseStringLiteral(entry));
 
   final name = entry.substring(0, groupStart);
   if (name.isEmpty) {
     throw const FormatException('Missing field name before nested field group');
+  }
+  if (name != name.trimRight()) {
+    throw const FormatException(
+      'Unexpected whitespace before nested field group',
+    );
   }
   final groupEnd = findMatchingBrace(entry, groupStart);
   if (groupEnd == -1) {
