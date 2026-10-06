@@ -7,7 +7,11 @@ class EncodeOptions {
   final String delimiter;
 
   const EncodeOptions({this.indentSize = 2, this.delimiter = ','})
-    : assert(indentSize > 0, 'indentSize must be positive');
+    : assert(indentSize > 0, 'indentSize must be positive'),
+      assert(
+        delimiter == ',' || delimiter == '\t' || delimiter == '|',
+        "delimiter must be ',', '\\t', or '|'",
+      );
 }
 
 /// Options for `decode`.
