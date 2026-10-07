@@ -417,8 +417,8 @@ JsonValue decodeListItem(
     return <String, JsonValue>{};
   }
 
-  final afterHyphen = line.content.substring(listItemPrefix.length);
-  if (trimSpaces(afterHyphen) == '[]') {
+  final afterHyphen = trimSpaces(line.content.substring(listItemPrefix.length));
+  if (afterHyphen == '[]') {
     return <JsonValue>[];
   }
 

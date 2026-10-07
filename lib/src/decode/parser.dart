@@ -364,7 +364,7 @@ String parseStringLiteral(String token) {
 }
 
 bool isArrayHeaderContent(String content) {
-  return trimSpaces(content).startsWith(openBracket) &&
+  return content.startsWith(openBracket) &&
       findUnquotedChar(content, colon) != -1;
 }
 
