@@ -4,6 +4,7 @@
 - **Breaking:** `EncodeOptions.indent` and `DecodeOptions.indent` are now `indentSize`
 - **Breaking:** `EncodeOptions.delimiter` is a `Delimiter` enum (`comma`, `tab`, `pipe`) instead of a `String`
 - **Breaking:** `decode` throws a `FormatException` instead of a `RangeError` when a count or row width does not match its header
+- **Breaking:** `decode` with `strict: false` no longer skips over-indented lines or content after a root array or keyed table, reads a malformed or misplaced header as a key-value line, or tolerates a row width mismatch
 - `encode` writes an `int` beyond ±(2^53 − 1) as a quoted decimal string, like a `BigInt`
 - `encode` writes any `Iterable` as an array, not only a `List` or `Set`
 - `encode` throws an `ArgumentError` on a string or key with an unpaired surrogate

@@ -42,7 +42,7 @@ Pass `EncodeOptions` to `encode` and `DecodeOptions` to `decode`, e.g. `encode(d
 | `EncodeOptions.indentSize` | `2` | Spaces per indentation level |
 | `EncodeOptions.delimiter` | `Delimiter.comma` | Delimiter for inline arrays and tabular rows: `Delimiter.comma`, `Delimiter.tab`, or `Delimiter.pipe` |
 | `DecodeOptions.indentSize` | `2` | Expected spaces per indentation level |
-| `DecodeOptions.strict` | `true` | Enforces the spec's strict-mode errors, such as count mismatches, duplicate keys, or tab indentation |
+| `DecodeOptions.strict` | `true` | Throws on count mismatches, duplicate keys, tab or uneven indentation, blank lines inside arrays, and depth jumps; `false` recovers from exactly these, and any other malformed input throws in both modes |
 
 ## Specification
 

@@ -25,8 +25,9 @@ class DecodeOptions {
   /// Expected spaces per indentation level.
   final int indentSize;
 
-  /// Whether to enforce the spec's strict-mode errors, such as count
-  /// mismatches, duplicate keys, or tab indentation.
+  /// Whether to throw on count mismatches, duplicate keys, tab or uneven
+  /// indentation, blank lines inside arrays, and depth jumps. Any other
+  /// malformed input throws in both modes.
   final bool strict;
 
   const DecodeOptions({this.indentSize = 2, this.strict = true});
