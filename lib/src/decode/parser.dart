@@ -72,7 +72,7 @@ ArrayHeaderParseResult? parseArrayHeaderLine(String content) {
   if (bracketStart > 0) {
     final rawKey = content.substring(0, bracketStart);
     // Trimming would silently turn `foo [2]:` into a header with key `foo`.
-    if (rawKey != rawKey.trimRight()) {
+    if (_endsWithWhitespace(rawKey)) {
       throw const FormatException(
         'Unexpected whitespace between key and bracket segment',
       );
@@ -154,6 +154,10 @@ final _bracketLength = RegExp(r'^(?:0|[1-9]\d*)$');
   );
 }
 
+// Whitespace is SP and HTAB only; `trimRight()` would also catch NBSP.
+bool _endsWithWhitespace(String value) =>
+    value.endsWith(space) || value.endsWith(tab);
+
 void _assertNoGap(String content, int start, int end, String target) {
   final gap = content.substring(start, end);
   if (gap.isNotEmpty) {
@@ -184,7 +188,7 @@ FieldNode _parseFieldEntry(String entry, String delimiter) {
   if (name.isEmpty) {
     throw const FormatException('Missing field name before nested field group');
   }
-  if (name != name.trimRight()) {
+  if (_endsWithWhitespace(name)) {
     throw const FormatException(
       'Unexpected whitespace before nested field group',
     );
