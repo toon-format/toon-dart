@@ -50,7 +50,6 @@ Targets [TOON spec v4.3](https://github.com/toon-format/spec/blob/v4.3.0/SPEC.md
 
 - **Numbers decode to `double`** – integers beyond 2^53 lose precision and a token that overflows `double` (e.g. `1e999`) decodes as a string ([§4](https://github.com/toon-format/spec/blob/v4.3.0/SPEC.md#4-decoding-interpretation-reference-decoder))
 - **Host values normalize to the JSON model** – `NaN` and infinities → `null`, `-0.0` → `0`, integers (`int` or `BigInt`) beyond ±(2^53 − 1) → quoted decimal string, `DateTime` → ISO 8601 string, `Set` and any other `Iterable` → array, `Map` keys → `toString()`, anything else → `null`; a string or key with an unpaired surrogate throws an `ArgumentError` ([§3](https://github.com/toon-format/spec/blob/v4.3.0/SPEC.md#3-encoding-normalization-reference-encoder))
-- **Tabs in indentation are a strict-mode error** – in non-strict mode each leading tab counts as one indentation level, on top of the leading spaces divided by `indentSize` ([§12](https://github.com/toon-format/spec/blob/v4.3.0/SPEC.md#12-indentation-and-whitespace))
 
 ## Resources
 
