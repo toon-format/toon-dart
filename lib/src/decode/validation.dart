@@ -1,4 +1,3 @@
-import '../options.dart';
 import '../types.dart';
 import '../utilities/constants.dart';
 import '../utilities/string_utils.dart';
@@ -8,9 +7,8 @@ void assertExpectedCount(
   int expected,
   String itemType,
   ParsedLine line,
-  DecodeOptions options,
 ) {
-  if (options.strict && actual != expected) {
+  if (actual != expected) {
     throw FormatException(
       expected < 0
           ? 'Line ${line.lineNumber}: Array length out of range'
@@ -20,11 +18,12 @@ void assertExpectedCount(
 }
 
 void validateNoBlankLinesInRange(
-  int startLine,
-  int endLine,
+  int? startLine,
+  int? endLine,
   List<int> blankLines,
   String context,
 ) {
+  if (startLine == null || endLine == null) return;
   // Any blank line between the first and last item fails, whatever its
   // indentation.
   final blank = blankLines

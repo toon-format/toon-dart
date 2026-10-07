@@ -4,16 +4,9 @@ import '../utilities/literal_utils.dart';
 import '../utilities/string_utils.dart';
 
 /// Parses [content] as an array header, or returns null when it is no header
-/// line. An invalid header throws in strict mode and falls through to a
-/// key-value line in non-strict mode.
+/// line.
 ArrayHeaderParseResult? resolveArrayHeader(String content, bool strict) {
-  final ArrayHeaderParseResult? result;
-  try {
-    result = parseArrayHeaderLine(content);
-  } on FormatException {
-    if (strict) rethrow;
-    return null;
-  }
+  final result = parseArrayHeaderLine(content);
 
   // Non-strict mode resolves duplicate field names by last-write-wins.
   if (result?.header.fields case final fields? when strict) {

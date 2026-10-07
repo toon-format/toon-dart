@@ -7,19 +7,18 @@ import 'scanners.dart';
 import 'validation.dart';
 
 JsonValue decodeValueFromLines(LineCursor cursor, DecodeOptions options) {
-  var first = cursor.peek();
-  while (first != null && first.depth != 0) {
-    skipOverIndentedLine(cursor, first, 0, options.strict);
-    first = cursor.peek();
-  }
+  final first = cursor.peek();
   if (first == null) {
     return <String, JsonValue>{};
+  }
+  if (first.depth != 0) {
+    throw overIndentedLineError(first, 0);
   }
   final content = first.content;
 
   if (content == '[]') {
     cursor.advance();
-    assertFullyConsumed(cursor, options.strict);
+    assertFullyConsumed(cursor);
     return <JsonValue>[];
   }
 
@@ -37,7 +36,7 @@ JsonValue decodeValueFromLines(LineCursor cursor, DecodeOptions options) {
         0,
         options,
       );
-      assertFullyConsumed(cursor, options.strict);
+      assertFullyConsumed(cursor);
       return array;
     }
   }
@@ -66,21 +65,10 @@ void assertNoDepthJump(ParsedLine nestedLine, int parentDepth, bool strict) {
   }
 }
 
-/// Throws on a line deeper than [contentDepth] in strict mode and skips it in
-/// non-strict mode.
-void skipOverIndentedLine(
-  LineCursor cursor,
-  ParsedLine line,
-  int contentDepth,
-  bool strict,
-) {
-  if (strict) {
-    throw FormatException(
-      'Line ${line.lineNumber}: Over-indented line: expected depth $contentDepth, but found ${line.depth}',
-    );
-  }
-  assertNotScalarLine(line);
-  cursor.advance();
+FormatException overIndentedLineError(ParsedLine line, int contentDepth) {
+  return FormatException(
+    'Line ${line.lineNumber}: Over-indented line: expected depth $contentDepth, but found ${line.depth}',
+  );
 }
 
 /// Returns the depth of a scope's content lines: one below [baseDepth], or in
@@ -94,28 +82,14 @@ int scopeContentDepth(LineCursor cursor, int baseDepth, bool strict) {
   return first.depth;
 }
 
-/// Strict decoding never silently discards input, so a line after the root
-/// form is an error; non-strict decoding skips it unless it is a bare token.
-void assertFullyConsumed(LineCursor cursor, bool strict) {
+/// Decoding never silently discards input, so a line after the root form is
+/// an error.
+void assertFullyConsumed(LineCursor cursor) {
   final line = cursor.peek();
   if (line == null) return;
-  if (strict) {
-    throw FormatException(
-      'Line ${line.lineNumber}: Unexpected content after the document root',
-    );
-  }
-  while (!cursor.atEnd) {
-    assertNotScalarLine(cursor.next()!);
-  }
-}
-
-/// Both modes reject a bare token outside root primitive position.
-void assertNotScalarLine(ParsedLine line) {
-  if (!isKeyValueContent(line.content)) {
-    throw FormatException(
-      'Line ${line.lineNumber}: Unexpected bare token line outside root primitive position',
-    );
-  }
+  throw FormatException(
+    'Line ${line.lineNumber}: Unexpected content after the document root',
+  );
 }
 
 JsonObject decodeObject(
@@ -137,8 +111,7 @@ JsonObject decodeObject(
 
     fieldDepth ??= line.depth;
     if (line.depth != fieldDepth) {
-      skipOverIndentedLine(cursor, line, fieldDepth, options.strict);
-      continue;
+      throw overIndentedLineError(line, fieldDepth);
     }
 
     cursor.advance();
@@ -171,13 +144,11 @@ void decodeField(
       );
       return;
     }
-    if (options.strict) {
-      throw FormatException(
-        header.keyed
-            ? 'Line ${line.lineNumber}: Keyless keyed header is only valid at the document root'
-            : 'Line ${line.lineNumber}: Keyless array header is only valid at the document root or as a list item',
-      );
-    }
+    throw FormatException(
+      header.keyed
+          ? 'Line ${line.lineNumber}: Keyless keyed header is only valid at the document root'
+          : 'Line ${line.lineNumber}: Keyless array header is only valid at the document root or as a list item',
+    );
   }
 
   final (:key, :end) = _withLine(line, () => parseKeyToken(content));
@@ -250,13 +221,14 @@ List<JsonPrimitive> decodeInlinePrimitiveArray(
     ),
   );
 
-  assertExpectedCount(
-    primitives.length,
-    header.length,
-    'inline array items',
-    headerLine,
-    options,
-  );
+  if (options.strict) {
+    assertExpectedCount(
+      primitives.length,
+      header.length,
+      'inline array items',
+      headerLine,
+    );
+  }
 
   return primitives;
 }
@@ -280,8 +252,7 @@ List<JsonValue> decodeListArray(
     }
 
     if (line.depth != itemDepth) {
-      skipOverIndentedLine(cursor, line, itemDepth, options.strict);
-      continue;
+      throw overIndentedLineError(line, itemDepth);
     }
 
     final isListItem =
@@ -296,15 +267,13 @@ List<JsonValue> decodeListArray(
     endLine = cursor.current!.lineNumber;
   }
 
-  assertExpectedCount(
-    items.length,
-    header.length,
-    'list array items',
-    cursor.current!,
-    options,
-  );
-
-  if (options.strict && startLine != null && endLine != null) {
+  if (options.strict) {
+    assertExpectedCount(
+      items.length,
+      header.length,
+      'list array items',
+      cursor.current!,
+    );
     validateNoBlankLinesInRange(
       startLine,
       endLine,
@@ -337,8 +306,7 @@ List<JsonObject> decodeTabularArray(
     }
 
     if (line.depth != rowDepth) {
-      skipOverIndentedLine(cursor, line, rowDepth, options.strict);
-      continue;
+      throw overIndentedLineError(line, rowDepth);
     }
 
     if (!isDataRow(line.content, header.delimiter)) {
@@ -350,26 +318,18 @@ List<JsonObject> decodeTabularArray(
 
     cursor.advance();
     final values = parseDelimitedValues(line.content, header.delimiter);
-    assertExpectedCount(
-      values.length,
-      leafCount,
-      'tabular row values',
-      line,
-      options,
-    );
+    assertExpectedCount(values.length, leafCount, 'tabular row values', line);
     final cells = _withLine(line, () => mapRowValuesToPrimitives(values));
     objects.add(objectFromFields(fields, cells));
   }
 
-  assertExpectedCount(
-    objects.length,
-    header.length,
-    'tabular rows',
-    cursor.current!,
-    options,
-  );
-
-  if (options.strict && startLine != null && endLine != null) {
+  if (options.strict) {
+    assertExpectedCount(
+      objects.length,
+      header.length,
+      'tabular rows',
+      cursor.current!,
+    );
     validateNoBlankLinesInRange(
       startLine,
       endLine,
@@ -404,18 +364,14 @@ JsonObject decodeKeyedObject(
     }
 
     if (line.depth != entryDepth) {
-      skipOverIndentedLine(cursor, line, entryDepth, options.strict);
-      continue;
+      throw overIndentedLineError(line, entryDepth);
     }
 
     cursor.advance();
     if (!isKeyValueContent(line.content)) {
-      if (options.strict) {
-        throw FormatException(
-          'Line ${line.lineNumber}: Expected entry row inside keyed tabular object',
-        );
-      }
-      continue;
+      throw FormatException(
+        'Line ${line.lineNumber}: Expected entry row inside keyed tabular object',
+      );
     }
 
     startLine ??= line.lineNumber;
@@ -428,26 +384,18 @@ JsonObject decodeKeyedObject(
       trimSpaces(line.content.substring(end)),
       header.delimiter,
     );
-    assertExpectedCount(
-      values.length,
-      leafCount,
-      'keyed entry cells',
-      line,
-      options,
-    );
+    assertExpectedCount(values.length, leafCount, 'keyed entry cells', line);
     final cells = _withLine(line, () => mapRowValuesToPrimitives(values));
     obj[key] = objectFromFields(fields, cells);
   }
 
-  assertExpectedCount(
-    obj.length,
-    header.length,
-    'keyed entries',
-    cursor.current!,
-    options,
-  );
-
-  if (options.strict && startLine != null && endLine != null) {
+  if (options.strict) {
+    assertExpectedCount(
+      obj.length,
+      header.length,
+      'keyed entries',
+      cursor.current!,
+    );
     validateNoBlankLinesInRange(
       startLine,
       endLine,
@@ -488,13 +436,11 @@ JsonValue decodeListItem(
         );
       }
       // There is no keyless keyed or fields-bearing list-item form.
-      if (options.strict) {
-        throw FormatException(
-          header.keyed
-              ? 'Line ${line.lineNumber}: Keyless keyed header is only valid at the document root'
-              : 'Line ${line.lineNumber}: Keyless header with a field list is only valid at the document root',
-        );
-      }
+      throw FormatException(
+        header.keyed
+            ? 'Line ${line.lineNumber}: Keyless keyed header is only valid at the document root'
+            : 'Line ${line.lineNumber}: Keyless header with a field list is only valid at the document root',
+      );
     }
   }
 
@@ -523,14 +469,14 @@ JsonObject decodeObjectFromListItem(
       break;
     }
 
+    if (line.depth != fieldDepth) {
+      throw overIndentedLineError(line, fieldDepth);
+    }
+
     // A hyphen marks a list item only at item depth, so a `- ` line here is a
     // further field.
-    if (line.depth == fieldDepth) {
-      cursor.advance();
-      decodeField(line.content, cursor, fieldDepth, options, obj);
-    } else {
-      skipOverIndentedLine(cursor, line, fieldDepth, options.strict);
-    }
+    cursor.advance();
+    decodeField(line.content, cursor, fieldDepth, options, obj);
   }
 
   return obj;
@@ -545,8 +491,7 @@ JsonObject objectFromFields(List<FieldNode> fields, List<JsonPrimitive> cells) {
     for (final node in nodes) {
       if (node.children case final children?) {
         obj[node.name] = walk(children);
-      } else if (cellIndex < cells.length) {
-        // A non-strict width mismatch leaves trailing leaves absent.
+      } else {
         obj[node.name] = cells[cellIndex++];
       }
     }
