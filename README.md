@@ -51,6 +51,8 @@ Targets [TOON spec v4.4](https://github.com/toon-format/spec/blob/v4.4.0/SPEC.md
 - **Numbers decode to `double`** – integers beyond 2^53 lose precision and a token that overflows `double` (e.g. `1e999`) decodes as a string ([§4](https://github.com/toon-format/spec/blob/v4.4.0/SPEC.md#4-decoding-interpretation-reference-decoder))
 - **Host values normalize to the JSON model** – `NaN` and infinities → `null`, `-0.0` → `0`, integers (`int` or `BigInt`) beyond ±(2^53 − 1) → quoted decimal string, `DateTime` → ISO 8601 string, `Set` and any other `Iterable` → array, `Map` keys → `toString()`, anything else → `null`; a string or key with an unpaired surrogate throws an `ArgumentError` ([§3](https://github.com/toon-format/spec/blob/v4.4.0/SPEC.md#3-encoding-normalization-reference-encoder))
 
+Releases follow [SemVer](https://semver.org/): a new spec MINOR version ships as a MINOR release, even when it changes how hand-written input decodes, and a MAJOR release means an API break or a new spec MAJOR version.
+
 ## Resources
 
 - **Specification:** [SPEC.md](https://github.com/toon-format/spec/blob/main/SPEC.md) – Normative rules and conformance checklists
