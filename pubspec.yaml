@@ -1,6 +1,6 @@
 name: toon_format
 description: Token-Oriented Object Notation (TOON) – a token-efficient JSON alternative for LLM prompts
-version: 0.2.0
+version: 1.0.0
 repository: https://github.com/toon-format/toon-dart
 homepage: https://toonformat.dev
 documentation: https://github.com/toon-format/toon-dart#readme
