@@ -3,59 +3,104 @@ import '../types.dart';
 import '../utilities/constants.dart';
 import 'normalize.dart';
 import 'primitives.dart';
+import 'tabular.dart';
 import 'writer.dart';
 
-// #region Encode normalized JsonValue
-
 String encodeValue(JsonValue value, EncodeOptions options) {
-  if (isJsonPrimitive(value)) {
-    return encodePrimitive(value, options.delimiter);
+  if (value is! JsonArray && value is! JsonObject) {
+    // Unquoted, a leading U+FEFF would be read as the document's byte-order
+    // mark and stripped on decode.
+    return value is String && value.startsWith(byteOrderMark)
+        ? quoteString(value)
+        : encodePrimitive(value, options.delimiter.symbol);
   }
 
-  final writer = LineWriter(options.indent);
-
-  if (isJsonArray(value)) {
-    encodeArray(null, value as JsonArray, writer, 0, options);
-  } else if (isJsonObject(value)) {
-    encodeObject(value as JsonObject, writer, 0, options);
+  final writer = LineWriter(options.indentSize);
+  switch (value) {
+    case JsonArray():
+      encodeArray(null, value, writer, 0, options);
+    case JsonObject():
+      encodeObjectValue(null, value, writer, 0, options);
   }
-
   return writer.toString();
 }
 
-// #endregion
-
-// #region Object encoding
-
-void encodeObject(JsonObject value, LineWriter writer, int depth, EncodeOptions options) {
-  final keys = value.keys.toList();
-
-  for (final key in keys) {
-    encodeKeyValuePair(key, value[key], writer, depth, options);
+void encodeObject(
+  JsonObject value,
+  LineWriter writer,
+  int depth,
+  EncodeOptions options,
+) {
+  for (final MapEntry(:key, :value) in value.entries) {
+    encodeKeyValuePair(key, value, writer, depth, options);
   }
 }
 
-void encodeKeyValuePair(String key, JsonValue? value, LineWriter writer, int depth, EncodeOptions options) {
-  final encodedKey = encodeKey(key);
-
-  if (isJsonPrimitive(value)) {
-    writer.push(depth, '$encodedKey: ${encodePrimitive(value, options.delimiter)}');
-  } else if (isJsonArray(value)) {
-    encodeArray(key, value as JsonArray, writer, depth, options);
-  } else if (isJsonObject(value)) {
-    final nestedKeys = (value as JsonObject).keys.toList();
-    if (nestedKeys.isEmpty) {
-      writer.push(depth, '$encodedKey:');
-    } else {
-      writer.push(depth, '$encodedKey:');
-      encodeObject(value, writer, depth + 1, options);
-    }
+void encodeKeyValuePair(
+  String key,
+  JsonValue value,
+  LineWriter writer,
+  int depth,
+  EncodeOptions options,
+) {
+  switch (value) {
+    case JsonArray():
+      encodeArray(key, value, writer, depth, options);
+    case JsonObject():
+      encodeObjectValue(key, value, writer, depth, options);
+    default:
+      writer.push(
+        depth,
+        '${encodeKey(key)}: ${encodePrimitive(value, options.delimiter.symbol)}',
+      );
   }
 }
 
-// #endregion
+/// Encodes an object value under [key], or at the root when [key] is null.
+void encodeObjectValue(
+  String? key,
+  JsonObject value,
+  LineWriter writer,
+  int depth,
+  EncodeOptions options,
+) {
+  final keyedFields = extractKeyedTabularFields(value);
+  if (keyedFields != null) {
+    final header = formatHeader(
+      value.length,
+      key: key,
+      fields: keyedFields,
+      delimiter: options.delimiter.symbol,
+      keyed: true,
+    );
+    writer.push(depth, header);
+    writeKeyedEntryRows(value, keyedFields, writer, depth + 1, options);
+    return;
+  }
 
-// #region Array encoding
+  if (key == null) {
+    encodeObject(value, writer, depth, options);
+    return;
+  }
+  writer.push(depth, '${encodeKey(key)}:');
+  encodeObject(value, writer, depth + 1, options);
+}
+
+void writeKeyedEntryRows(
+  JsonObject value,
+  List<FieldNode> fields,
+  LineWriter writer,
+  int depth,
+  EncodeOptions options,
+) {
+  for (final MapEntry(:key, value: entry) in value.entries) {
+    final leaves = collectRowLeaves(entry as JsonObject, fields);
+    writer.push(
+      depth,
+      '${encodeKey(key)}: ${encodeAndJoinPrimitives(leaves, options.delimiter.symbol)}',
+    );
+  }
+}
 
 void encodeArray(
   String? key,
@@ -65,216 +110,93 @@ void encodeArray(
   EncodeOptions options,
 ) {
   if (value.isEmpty) {
-    final header = formatHeader(0, key: key, delimiter: options.delimiter);
-    writer.push(depth, header);
+    writer.push(depth, key == null ? '[]' : '${encodeKey(key)}: []');
     return;
   }
 
   if (isArrayOfPrimitives(value)) {
-    final formatted = encodeInlineArrayLine(value, options.delimiter, key);
-    writer.push(depth, formatted);
+    writer.push(
+      depth,
+      encodeInlineArrayLine(value, options.delimiter.symbol, key),
+    );
     return;
-  }
-
-  if (isArrayOfArrays(value)) {
-    final allPrimitiveArrays = value.every((arr) => isArrayOfPrimitives(arr as JsonArray));
-    if (allPrimitiveArrays) {
-      encodeArrayOfArraysAsListItems(key, value.cast<JsonArray>(), writer, depth, options);
-      return;
-    }
   }
 
   if (isArrayOfObjects(value)) {
-    final objects = value.cast<JsonObject>();
-    final header = extractTabularHeader(objects);
-    if (header != null) {
-      encodeArrayOfObjectsAsTabular(key, objects, header, writer, depth, options);
-    } else {
-      encodeMixedArrayAsListItems(key, value, writer, depth, options);
+    final rows = value.cast<JsonObject>();
+    final fields = extractTabularFields(rows);
+    if (fields != null) {
+      encodeArrayOfObjectsAsTabular(key, rows, fields, writer, depth, options);
+      return;
     }
-    return;
   }
 
   encodeMixedArrayAsListItems(key, value, writer, depth, options);
 }
 
-// #endregion
-
-// #region Array of arrays (expanded format)
-
-void encodeArrayOfArraysAsListItems(
-  String? prefix,
-  List<JsonArray> values,
-  LineWriter writer,
-  int depth,
-  EncodeOptions options,
+String encodeInlineArrayLine(
+  List<JsonPrimitive> values,
+  String delimiter,
+  String? key,
 ) {
-  final header = formatHeader(values.length, key: prefix, delimiter: options.delimiter);
-  writer.push(depth, header);
-
-  for (final arr in values) {
-    if (isArrayOfPrimitives(arr)) {
-      final inline = encodeInlineArrayLine(arr, options.delimiter, null);
-      writer.pushListItem(depth + 1, inline);
-    }
-  }
-}
-
-String encodeInlineArrayLine(List<JsonPrimitive> values, String delimiter, String? prefix) {
-  final header = formatHeader(values.length, key: prefix, delimiter: delimiter);
-  final joinedValue = encodeAndJoinPrimitives(values, delimiter);
+  final header = formatHeader(values.length, key: key, delimiter: delimiter);
   if (values.isEmpty) {
     return header;
   }
-  return '$header $joinedValue';
+  return '$header ${encodeAndJoinPrimitives(values, delimiter)}';
 }
 
-// #endregion
-
-// #region Array of objects (tabular format)
-
 void encodeArrayOfObjectsAsTabular(
-  String? prefix,
+  String? key,
   List<JsonObject> rows,
-  List<String> header,
+  List<FieldNode> fields,
   LineWriter writer,
   int depth,
   EncodeOptions options,
 ) {
-  final formattedHeader = formatHeader(rows.length, key: prefix, fields: header, delimiter: options.delimiter);
-  writer.push(depth, formattedHeader);
-
-  writeTabularRows(rows, header, writer, depth + 1, options);
-}
-
-List<String>? extractTabularHeader(List<JsonObject> rows) {
-  if (rows.isEmpty) return null;
-
-  final firstRow = rows[0];
-  final firstKeys = firstRow.keys.toList();
-  if (firstKeys.isEmpty) return null;
-
-  if (isTabularArray(rows, firstKeys)) {
-    return firstKeys;
-  }
-  return null;
-}
-
-bool isTabularArray(
-  List<JsonObject> rows,
-  List<String> header,
-) {
-  for (final row in rows) {
-    final keys = row.keys.toList();
-
-    // Rows may list the same keys in a different order.
-    if (keys.length != header.length) {
-      return false;
-    }
-
-    for (final key in header) {
-      if (!row.containsKey(key)) {
-        return false;
-      }
-      if (!isJsonPrimitive(row[key])) {
-        return false;
-      }
-    }
-  }
-
-  return true;
+  final header = formatHeader(
+    rows.length,
+    key: key,
+    fields: fields,
+    delimiter: options.delimiter.symbol,
+  );
+  writer.push(depth, header);
+  writeTabularRows(rows, fields, writer, depth + 1, options);
 }
 
 void writeTabularRows(
   List<JsonObject> rows,
-  List<String> header,
+  List<FieldNode> fields,
   LineWriter writer,
   int depth,
   EncodeOptions options,
 ) {
   for (final row in rows) {
-    final values = header.map((key) => row[key]).toList();
-    final joinedValue = encodeAndJoinPrimitives(values, options.delimiter);
-    writer.push(depth, joinedValue);
+    final leaves = collectRowLeaves(row, fields);
+    writer.push(
+      depth,
+      encodeAndJoinPrimitives(leaves, options.delimiter.symbol),
+    );
   }
 }
 
-// #endregion
-
-// #region Array of objects (expanded format)
-
 void encodeMixedArrayAsListItems(
-  String? prefix,
-  List<JsonValue> items,
+  String? key,
+  JsonArray items,
   LineWriter writer,
   int depth,
   EncodeOptions options,
 ) {
-  final header = formatHeader(items.length, key: prefix, delimiter: options.delimiter);
+  final header = formatHeader(
+    items.length,
+    key: key,
+    delimiter: options.delimiter.symbol,
+  );
   writer.push(depth, header);
-
   for (final item in items) {
     encodeListItemValue(item, writer, depth + 1, options);
   }
 }
-
-void encodeObjectAsListItem(JsonObject obj, LineWriter writer, int depth, EncodeOptions options) {
-  final keys = obj.keys.toList();
-  if (keys.isEmpty) {
-    writer.push(depth, listItemMarker);
-    return;
-  }
-
-  final firstKey = keys[0];
-  final encodedKey = encodeKey(firstKey);
-  final firstValue = obj[firstKey];
-
-  if (isJsonPrimitive(firstValue)) {
-    writer.pushListItem(depth, '$encodedKey: ${encodePrimitive(firstValue, options.delimiter)}');
-  } else if (isJsonArray(firstValue)) {
-    final arr = firstValue as JsonArray;
-    if (isArrayOfPrimitives(arr)) {
-      final formatted = encodeInlineArrayLine(arr, options.delimiter, firstKey);
-      writer.pushListItem(depth, formatted);
-    } else if (isArrayOfObjects(arr)) {
-      final objects = arr.cast<JsonObject>();
-      final header = extractTabularHeader(objects);
-      if (header != null) {
-        final formattedHeader = formatHeader(arr.length, key: firstKey, fields: header, delimiter: options.delimiter);
-        writer.pushListItem(depth, formattedHeader);
-        writeTabularRows(objects, header, writer, depth + 1, options);
-      } else {
-        writer.pushListItem(depth, '$encodedKey[${arr.length}]:');
-        for (final item in arr) {
-          encodeObjectAsListItem(item as JsonObject, writer, depth + 1, options);
-        }
-      }
-    } else {
-      writer.pushListItem(depth, '$encodedKey[${arr.length}]:');
-
-      for (final item in arr) {
-        encodeListItemValue(item, writer, depth + 1, options);
-      }
-    }
-  } else if (isJsonObject(firstValue)) {
-    final nestedKeys = (firstValue as JsonObject).keys.toList();
-    if (nestedKeys.isEmpty) {
-      writer.pushListItem(depth, '$encodedKey:');
-    } else {
-      writer.pushListItem(depth, '$encodedKey:');
-      encodeObject(firstValue, writer, depth + 2, options);
-    }
-  }
-
-  for (int i = 1; i < keys.length; i++) {
-    final key = keys[i];
-    encodeKeyValuePair(key, obj[key], writer, depth + 1, options);
-  }
-}
-
-// #endregion
-
-// #region List item encoding helpers
 
 void encodeListItemValue(
   JsonValue value,
@@ -282,17 +204,109 @@ void encodeListItemValue(
   int depth,
   EncodeOptions options,
 ) {
-  if (isJsonPrimitive(value)) {
-    writer.pushListItem(depth, encodePrimitive(value, options.delimiter));
-  } else if (isJsonArray(value)) {
-    final arr = value as JsonArray;
-    if (isArrayOfPrimitives(arr)) {
-      final inline = encodeInlineArrayLine(arr, options.delimiter, null);
-      writer.pushListItem(depth, inline);
-    }
-  } else if (isJsonObject(value)) {
-    encodeObjectAsListItem(value as JsonObject, writer, depth, options);
+  switch (value) {
+    case JsonArray() when isArrayOfPrimitives(value):
+      writer.pushListItem(
+        depth,
+        encodeInlineArrayLine(value, options.delimiter.symbol, null),
+      );
+    case JsonArray():
+      writer.pushListItem(
+        depth,
+        formatHeader(value.length, delimiter: options.delimiter.symbol),
+      );
+      for (final item in value) {
+        encodeListItemValue(item, writer, depth + 1, options);
+      }
+    case JsonObject():
+      encodeObjectAsListItem(value, writer, depth, options);
+    default:
+      writer.pushListItem(
+        depth,
+        encodePrimitive(value, options.delimiter.symbol),
+      );
   }
 }
 
-// #endregion
+/// Puts the first field on the hyphen line; its nested lines sit at
+/// `depth + 2`, the remaining fields at `depth + 1`.
+void encodeObjectAsListItem(
+  JsonObject obj,
+  LineWriter writer,
+  int depth,
+  EncodeOptions options,
+) {
+  if (obj.isEmpty) {
+    writer.push(depth, listItemMarker);
+    return;
+  }
+
+  final MapEntry(key: firstKey, value: firstValue) = obj.entries.first;
+  final encodedKey = encodeKey(firstKey);
+
+  switch (firstValue) {
+    case JsonArray() when firstValue.isEmpty:
+      writer.pushListItem(depth, '$encodedKey: []');
+    case JsonArray() when isArrayOfPrimitives(firstValue):
+      writer.pushListItem(
+        depth,
+        encodeInlineArrayLine(firstValue, options.delimiter.symbol, firstKey),
+      );
+    case JsonArray():
+      final rows = isArrayOfObjects(firstValue)
+          ? firstValue.cast<JsonObject>()
+          : null;
+      final fields = rows == null ? null : extractTabularFields(rows);
+      if (rows != null && fields != null) {
+        final header = formatHeader(
+          rows.length,
+          key: firstKey,
+          fields: fields,
+          delimiter: options.delimiter.symbol,
+        );
+        writer.pushListItem(depth, header);
+        writeTabularRows(rows, fields, writer, depth + 2, options);
+      } else {
+        final header = formatHeader(
+          firstValue.length,
+          key: firstKey,
+          delimiter: options.delimiter.symbol,
+        );
+        writer.pushListItem(depth, header);
+        for (final item in firstValue) {
+          encodeListItemValue(item, writer, depth + 2, options);
+        }
+      }
+    case JsonObject():
+      final keyedFields = extractKeyedTabularFields(firstValue);
+      if (keyedFields != null) {
+        final header = formatHeader(
+          firstValue.length,
+          key: firstKey,
+          fields: keyedFields,
+          delimiter: options.delimiter.symbol,
+          keyed: true,
+        );
+        writer.pushListItem(depth, header);
+        writeKeyedEntryRows(
+          firstValue,
+          keyedFields,
+          writer,
+          depth + 2,
+          options,
+        );
+      } else {
+        writer.pushListItem(depth, '$encodedKey:');
+        encodeObject(firstValue, writer, depth + 2, options);
+      }
+    default:
+      writer.pushListItem(
+        depth,
+        '$encodedKey: ${encodePrimitive(firstValue, options.delimiter.symbol)}',
+      );
+  }
+
+  for (final MapEntry(:key, :value) in obj.entries.skip(1)) {
+    encodeKeyValuePair(key, value, writer, depth + 1, options);
+  }
+}

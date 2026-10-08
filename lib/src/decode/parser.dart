@@ -1,220 +1,317 @@
 import '../types.dart';
 import '../utilities/constants.dart';
-import '../utilities/literal-utils.dart';
-import '../utilities/string-utils.dart';
+import '../utilities/literal_utils.dart';
+import '../utilities/string_utils.dart';
 
-// #region Array header parsing
+/// Parses [content] as an array header, or returns null when it is no header
+/// line.
+ArrayHeaderParseResult? resolveArrayHeader(String content, bool strict) {
+  final result = parseArrayHeaderLine(content);
 
-ArrayHeaderParseResult? parseArrayHeaderLine(
-  String content,
-  String defaultDelimiter,
-) {
-  final trimmed = content.trimLeft();
-
-  int bracketStart = -1;
-
-  // A quoted key may contain brackets, so search after its closing quote.
-  if (trimmed.startsWith(doubleQuote)) {
-    final closingQuoteIndex = findClosingQuote(trimmed, 0);
-    if (closingQuoteIndex == -1) {
-      return null;
-    }
-
-    final afterQuote = trimmed.substring(closingQuoteIndex + 1);
-    if (!afterQuote.startsWith(openBracket)) {
-      return null;
-    }
-
-    final leadingWhitespace = content.length - trimmed.length;
-    final keyEndIndex = leadingWhitespace + closingQuoteIndex + 1;
-    bracketStart = content.indexOf(openBracket, keyEndIndex);
-  } else {
-    bracketStart = content.indexOf(openBracket);
+  // Non-strict mode resolves duplicate field names by last-write-wins.
+  if (result?.header.fields case final fields? when strict) {
+    _assertUniqueFieldNames(fields);
   }
+  return result;
+}
 
+void _assertUniqueFieldNames(List<FieldNode> fields) {
+  final seen = <String>{};
+  for (final field in fields) {
+    if (!seen.add(field.name)) {
+      throw FormatException(
+        'Duplicate field name "${field.name}" in field list',
+      );
+    }
+    if (field.children case final children?) _assertUniqueFieldNames(children);
+  }
+}
+
+/// Returns null when [content] is no header line and throws a
+/// [FormatException] when it is an invalid one.
+ArrayHeaderParseResult? parseArrayHeaderLine(String content) {
+  final bracketStart = findUnquotedChar(content, openBracket);
   if (bracketStart == -1) {
     return null;
   }
 
-  final bracketEnd = content.indexOf(closeBracket, bracketStart);
+  // A header needs a colon, and its key can't contain one.
+  final firstColonIndex = findUnquotedChar(content, colon);
+  if (firstColonIndex == -1 || firstColonIndex < bracketStart) {
+    return null;
+  }
+
+  // Past this check, a grammar failure makes the line an invalid header
+  // instead of a key-value line.
+  final bracketEnd = findUnquotedChar(content, closeBracket, bracketStart);
   if (bracketEnd == -1) {
-    return null;
+    throw const FormatException('Unterminated bracket segment');
   }
 
-  int colonIndex = bracketEnd + 1;
-  int braceEnd = colonIndex;
-
-  final braceStart = content.indexOf(openBrace, bracketEnd);
-  if (braceStart != -1 && braceStart < content.indexOf(colon, bracketEnd)) {
-    final foundBraceEnd = content.indexOf(closeBrace, braceStart);
-    if (foundBraceEnd != -1) {
-      braceEnd = foundBraceEnd + 1;
+  var headerEnd = bracketEnd + 1;
+  String? fieldsContent;
+  final braceStart = findUnquotedChar(content, openBrace, bracketEnd);
+  if (braceStart != -1 &&
+      braceStart < findUnquotedChar(content, colon, bracketEnd)) {
+    _assertNoGap(content, bracketEnd + 1, braceStart, 'field list');
+    final braceEnd = findMatchingBrace(content, braceStart);
+    if (braceEnd == -1) {
+      throw const FormatException('Unmatched brace in field list');
     }
+    fieldsContent = content.substring(braceStart + 1, braceEnd);
+    headerEnd = braceEnd + 1;
   }
 
-  colonIndex = content.indexOf(colon, bracketEnd > braceEnd ? bracketEnd : braceEnd);
+  final colonIndex = findUnquotedChar(content, colon, headerEnd);
   if (colonIndex == -1) {
-    return null;
+    throw const FormatException('Missing colon after array header');
   }
+  _assertNoGap(content, headerEnd, colonIndex, 'colon');
 
   String? key;
   if (bracketStart > 0) {
-    final rawKey = content.substring(0, bracketStart).trim();
+    final rawKey = content.substring(0, bracketStart);
+    // Trimming would silently turn `foo [2]:` into a header with key `foo`.
+    if (_endsWithWhitespace(rawKey)) {
+      throw const FormatException(
+        'Unexpected whitespace between key and bracket segment',
+      );
+    }
     key = rawKey.startsWith(doubleQuote) ? parseStringLiteral(rawKey) : rawKey;
   }
 
-  final afterColon = content.substring(colonIndex + 1).trim();
+  final afterColon = trimSpaces(content.substring(colonIndex + 1));
 
   final bracketContent = content.substring(bracketStart + 1, bracketEnd);
 
-  BracketSegmentResult parsedBracket;
-  try {
-    parsedBracket = parseBracketSegment(bracketContent, defaultDelimiter);
-  } catch (e) {
-    return null;
-  }
+  final (:length, :delimiter, :keyed) = parseBracketSegment(bracketContent);
 
-  final length = parsedBracket.length;
-  final delimiter = parsedBracket.delimiter;
-
-  List<String>? fields;
-  if (braceStart != -1 && braceStart < colonIndex) {
-    final foundBraceEnd = content.indexOf(closeBrace, braceStart);
-    if (foundBraceEnd != -1 && foundBraceEnd < colonIndex) {
-      final fieldsContent = content.substring(braceStart + 1, foundBraceEnd);
-      fields = parseDelimitedValues(fieldsContent, delimiter)
-          .map((field) => parseStringLiteral(field.trim()))
-          .toList();
+  List<FieldNode>? fields;
+  if (fieldsContent != null) {
+    for (final other in const [comma, tab, pipe]) {
+      if (other != delimiter && findUnquotedChar(fieldsContent, other) != -1) {
+        throw FormatException(
+          'Header delimiter mismatch: field list contains unquoted "${escapeString(other)}"',
+        );
+      }
     }
+    fields = parseFieldEntries(fieldsContent, delimiter);
   }
 
-  return ArrayHeaderParseResult(
+  if (keyed && fields == null) {
+    throw const FormatException('Keyed header requires a field list');
+  }
+
+  // Decoding the values as an inline array would silently drop the fields.
+  if (fields != null && afterColon.isNotEmpty) {
+    throw const FormatException(
+      'Unexpected content after fields-bearing header colon',
+    );
+  }
+
+  return (
     header: ArrayHeaderInfo(
       key: key,
       length: length,
       delimiter: delimiter,
       fields: fields,
+      keyed: keyed,
     ),
     inlineValues: afterColon.isEmpty ? null : afterColon,
   );
 }
 
-BracketSegmentResult parseBracketSegment(
-  String seg,
-  String defaultDelimiter,
+final _bracketLength = RegExp(r'^(?:0|[1-9]\d*)$');
+
+({int length, String delimiter, bool keyed}) parseBracketSegment(
+  String segment,
 ) {
-  String content = seg;
+  var content = segment;
 
-  String delimiter = defaultDelimiter;
-  if (content.endsWith(tab)) {
-    delimiter = tab;
-    content = content.substring(0, content.length - 1);
-  } else if (content.endsWith(pipe)) {
-    delimiter = pipe;
+  var delimiter = defaultDelimiter;
+  if (content.endsWith(tab) || content.endsWith(pipe)) {
+    delimiter = content[content.length - 1];
     content = content.substring(0, content.length - 1);
   }
 
-  final length = int.tryParse(content);
-  if (length == null) {
-    throw FormatException('Invalid array length: $seg');
+  // Only a colon between the length and the delimiter symbol marks a keyed
+  // header; anywhere else it fails the length check below.
+  final keyed = content.endsWith(colon);
+  if (keyed) {
+    content = content.substring(0, content.length - 1);
   }
 
-  return BracketSegmentResult(
-    length: length,
+  if (!_bracketLength.hasMatch(content)) {
+    throw FormatException('Invalid array length: "$segment"');
+  }
+
+  // A length beyond the int range can never match a count; -1 marks it for
+  // the count error.
+  return (
+    length: int.tryParse(content) ?? -1,
     delimiter: delimiter,
+    keyed: keyed,
   );
 }
 
-// #endregion
+// Whitespace is SP and HTAB only; `trimRight()` would also catch NBSP.
+bool _endsWithWhitespace(String value) =>
+    value.endsWith(space) || value.endsWith(tab);
 
-// #region Delimited value parsing
+void _assertNoGap(String content, int start, int end, String target) {
+  final gap = content.substring(start, end);
+  if (gap.isNotEmpty) {
+    throw FormatException(
+      'Unexpected "$gap" between bracket segment and $target',
+    );
+  }
+}
+
+/// Parses a field list, descending into nested field groups
+/// (`field{sub1,sub2}`).
+List<FieldNode> parseFieldEntries(String content, String delimiter) {
+  return [
+    for (final entry in _splitFieldEntries(content, delimiter))
+      _parseFieldEntry(trimSpaces(entry), delimiter),
+  ];
+}
+
+FieldNode _parseFieldEntry(String entry, String delimiter) {
+  if (entry.isEmpty) {
+    throw const FormatException('Empty field name in field list');
+  }
+
+  final groupStart = findUnquotedChar(entry, openBrace);
+  if (groupStart == -1) return FieldNode(parseStringLiteral(entry));
+
+  final name = entry.substring(0, groupStart);
+  if (name.isEmpty) {
+    throw const FormatException('Missing field name before nested field group');
+  }
+  if (_endsWithWhitespace(name)) {
+    throw const FormatException(
+      'Unexpected whitespace before nested field group',
+    );
+  }
+  final groupEnd = findMatchingBrace(entry, groupStart);
+  if (groupEnd == -1) {
+    throw const FormatException('Unmatched brace in field list');
+  }
+  if (groupEnd != entry.length - 1) {
+    throw const FormatException('Unexpected content after nested field group');
+  }
+
+  return FieldNode(
+    parseStringLiteral(name),
+    parseFieldEntries(entry.substring(groupStart + 1, groupEnd), delimiter),
+  );
+}
+
+/// Splits a field list on [delimiter] outside quotes and nested groups.
+List<String> _splitFieldEntries(String content, String delimiter) {
+  final entries = <String>[];
+  var entryStart = 0;
+  var inQuotes = false;
+  var depth = 0;
+  for (var i = 0; i < content.length; i++) {
+    final char = content[i];
+    if (char == backslash && inQuotes) {
+      i++;
+    } else if (char == doubleQuote) {
+      inQuotes = !inQuotes;
+    } else if (!inQuotes && char == openBrace) {
+      depth++;
+    } else if (!inQuotes && char == closeBrace) {
+      depth--;
+    } else if (!inQuotes && depth == 0 && char == delimiter) {
+      entries.add(content.substring(entryStart, i));
+      entryStart = i + 1;
+    }
+  }
+  entries.add(content.substring(entryStart));
+  return entries;
+}
+
+/// Counts the leaf fields of [fields]: the number of cells per row.
+int countLeafFields(List<FieldNode> fields) {
+  var count = 0;
+  for (final field in fields) {
+    count += switch (field.children) {
+      final children? => countLeafFields(children),
+      null => 1,
+    };
+  }
+  return count;
+}
+
+/// Returns the index of the brace closing the one at [braceStart], ignoring
+/// braces inside quoted names, or -1.
+int findMatchingBrace(String content, int braceStart) {
+  var inQuotes = false;
+  var depth = 0;
+  for (var i = braceStart; i < content.length; i++) {
+    final char = content[i];
+    if (char == backslash && inQuotes) {
+      i++;
+    } else if (char == doubleQuote) {
+      inQuotes = !inQuotes;
+    } else if (!inQuotes && char == openBrace) {
+      depth++;
+    } else if (!inQuotes && char == closeBrace && --depth == 0) {
+      return i;
+    }
+  }
+  return -1;
+}
 
 List<String> parseDelimitedValues(String input, String delimiter) {
+  if (input.isEmpty) return [];
+
   final values = <String>[];
-  final current = StringBuffer();
-  bool inQuotes = false;
-  int i = 0;
-
-  while (i < input.length) {
+  var valueStart = 0;
+  var inQuotes = false;
+  for (var i = 0; i < input.length; i++) {
     final char = input[i];
-
-    if (char == backslash && i + 1 < input.length && inQuotes) {
-      current.write(char);
-      current.write(input[i + 1]);
-      i += 2;
-      continue;
-    }
-
-    if (char == doubleQuote) {
+    if (char == backslash && inQuotes) {
+      i++;
+    } else if (char == doubleQuote) {
       inQuotes = !inQuotes;
-      current.write(char);
-      i++;
-      continue;
+    } else if (!inQuotes && char == delimiter) {
+      values.add(trimSpaces(input.substring(valueStart, i)));
+      valueStart = i + 1;
     }
-
-    if (char == delimiter && !inQuotes) {
-      values.add(current.toString().trim());
-      current.clear();
-      i++;
-      continue;
-    }
-
-    current.write(char);
-    i++;
   }
-
-  if (current.isNotEmpty || values.isNotEmpty) {
-    values.add(current.toString().trim());
-  }
-
+  values.add(trimSpaces(input.substring(valueStart)));
   return values;
 }
 
 List<JsonPrimitive> mapRowValuesToPrimitives(List<String> values) {
-  return values.map((v) => parsePrimitiveToken(v)).toList();
+  return values.map(parsePrimitiveToken).toList();
 }
 
-// #endregion
-
-// #region Primitive and key parsing
-
 JsonPrimitive parsePrimitiveToken(String token) {
-  final trimmed = token.trim();
-
-  if (trimmed.isEmpty) {
-    return '';
-  }
-
-  if (trimmed.startsWith(doubleQuote)) {
-    return parseStringLiteral(trimmed);
-  }
-
-  if (isBooleanOrNullLiteral(trimmed)) {
-    if (trimmed == trueLiteral) return true;
-    if (trimmed == falseLiteral) return false;
-    if (trimmed == nullLiteral) return null;
-  }
-
-  if (isNumericLiteral(trimmed)) {
-    final parsedNumber = double.parse(trimmed);
-    return parsedNumber == -0.0 ? 0 : parsedNumber;
-  }
-
-  return trimmed;
+  final trimmed = trimSpaces(token);
+  return switch (trimmed) {
+    trueLiteral => true,
+    falseLiteral => false,
+    nullLiteral => null,
+    _ when trimmed.startsWith(doubleQuote) => parseStringLiteral(trimmed),
+    _ => parseNumericLiteral(trimmed) ?? trimmed,
+  };
 }
 
 String parseStringLiteral(String token) {
-  final trimmedToken = token.trim();
+  final trimmedToken = trimSpaces(token);
 
   if (trimmedToken.startsWith(doubleQuote)) {
     final closingQuoteIndex = findClosingQuote(trimmedToken, 0);
 
     if (closingQuoteIndex == -1) {
-      throw FormatException('Unterminated string: missing closing quote');
+      throw const FormatException('Unterminated string: missing closing quote');
     }
 
     if (closingQuoteIndex != trimmedToken.length - 1) {
-      throw FormatException('Unexpected characters after closing quote');
+      throw const FormatException('Unexpected characters after closing quote');
     }
 
     final content = trimmedToken.substring(1, closingQuoteIndex);
@@ -224,60 +321,53 @@ String parseStringLiteral(String token) {
   return trimmedToken;
 }
 
-KeyTokenResult parseUnquotedKey(String content, int start) {
-  int end = start;
-  while (end < content.length && content[end] != colon) {
+/// Parses the key of the key-value line [content] and returns it with the
+/// index after its colon.
+({String key, int end}) parseKeyToken(String content) {
+  return content.startsWith(doubleQuote)
+      ? _parseQuotedKey(content)
+      : _parseUnquotedKey(content);
+}
+
+({String key, int end}) _parseUnquotedKey(String content) {
+  // A raw scan would cut `a "b:c" d: 1` at the quoted colon.
+  final colonIndex = findUnquotedChar(content, colon);
+  if (colonIndex == -1) {
+    throw const FormatException('Missing colon after key');
+  }
+
+  return (
+    key: trimSpaces(content.substring(0, colonIndex)),
+    end: colonIndex + 1,
+  );
+}
+
+({String key, int end}) _parseQuotedKey(String content) {
+  final closingQuoteIndex = findClosingQuote(content, 0);
+
+  if (closingQuoteIndex == -1) {
+    throw const FormatException('Unterminated quoted key');
+  }
+
+  final key = unescapeString(content.substring(1, closingQuoteIndex));
+  var end = closingQuoteIndex + 1;
+  while (end < content.length && content[end] == space) {
     end++;
   }
 
   if (end >= content.length || content[end] != colon) {
-    throw FormatException('Missing colon after key');
-  }
-
-  final key = content.substring(start, end).trim();
-
-  end++;
-
-  return KeyTokenResult(key: key, end: end);
-}
-
-KeyTokenResult parseQuotedKey(String content, int start) {
-  final closingQuoteIndex = findClosingQuote(content, start);
-
-  if (closingQuoteIndex == -1) {
-    throw FormatException('Unterminated quoted key');
-  }
-
-  final keyContent = content.substring(start + 1, closingQuoteIndex);
-  final key = unescapeString(keyContent);
-  int end = closingQuoteIndex + 1;
-
-  if (end >= content.length || content[end] != colon) {
-    throw FormatException('Missing colon after key');
+    throw const FormatException('Missing colon after key');
   }
   end++;
 
-  return KeyTokenResult(key: key, end: end);
+  return (key: key, end: end);
 }
 
-KeyTokenResult parseKeyToken(String content, int start) {
-  if (content[start] == doubleQuote) {
-    return parseQuotedKey(content, start);
-  } else {
-    return parseUnquotedKey(content, start);
-  }
+bool isArrayHeaderContent(String content) {
+  return content.startsWith(openBracket) &&
+      findUnquotedChar(content, colon) != -1;
 }
 
-// #endregion
-
-// #region Array content detection helpers
-
-bool isArrayHeaderAfterHyphen(String content) {
-  return content.trim().startsWith(openBracket) && findUnquotedChar(content, colon) != -1;
-}
-
-bool isObjectFirstFieldAfterHyphen(String content) {
+bool isKeyValueContent(String content) {
   return findUnquotedChar(content, colon) != -1;
 }
-
-// #endregion

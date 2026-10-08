@@ -4,11 +4,7 @@ class LineWriter {
   final List<String> _lines = [];
   final String _indentationString;
 
-  LineWriter(int indentSize) : _indentationString = ' ' * indentSize {
-    if (indentSize <= 0) {
-      throw ArgumentError('indentSize must be positive');
-    }
-  }
+  LineWriter(int indentSize) : _indentationString = ' ' * indentSize;
 
   void push(int depth, String content) {
     final indent = _indentationString * depth;

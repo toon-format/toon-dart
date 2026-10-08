@@ -1,6 +1,6 @@
 # TOON for Dart
 
-[![SPEC v1.4](https://img.shields.io/badge/spec-v1.4-lightgrey)](https://github.com/toon-format/spec/blob/v1.4.0/SPEC.md)
+[![SPEC v4.4](https://img.shields.io/badge/spec-v4.4-lightgrey)](https://github.com/toon-format/spec/blob/v4.4.0/SPEC.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
 Encodes Dart values to [TOON (Token-Oriented Object Notation)](https://github.com/toon-format/toon) and decodes TOON back. TOON is a compact, indentation-based encoding of the JSON data model for LLM input.
@@ -35,21 +35,21 @@ void main() {
 }
 ```
 
-Pass `EncodeOptions` to `encode` and `DecodeOptions` to `decode`, e.g. `encode(data, options: const EncodeOptions(delimiter: '|'))`:
+Pass `EncodeOptions` to `encode` and `DecodeOptions` to `decode`, e.g. `encode(data, options: const EncodeOptions(delimiter: Delimiter.pipe))`:
 
 | Option | Default | Description |
 | ------ | ------- | ----------- |
-| `EncodeOptions.indent` | `2` | Spaces per indentation level |
-| `EncodeOptions.delimiter` | `','` | Delimiter for inline arrays and tabular rows: `','`, `'\t'`, or `'\|'` |
-| `DecodeOptions.indent` | `2` | Expected spaces per indentation level |
-| `DecodeOptions.strict` | `true` | Error on length mismatches, blank lines inside arrays, and tabs or uneven indentation |
+| `EncodeOptions.indentSize` | `2` | Spaces per indentation level |
+| `EncodeOptions.delimiter` | `Delimiter.comma` | Delimiter for inline arrays and tabular rows: `Delimiter.comma`, `Delimiter.tab`, or `Delimiter.pipe` |
+| `DecodeOptions.indentSize` | `2` | Expected spaces per indentation level |
+| `DecodeOptions.strict` | `true` | Throws on count mismatches, duplicate keys, tab or uneven indentation, blank lines in an array or keyed tabular object, and depth jumps; `false` recovers from these; other malformed input still throws |
 
 ## Specification
 
-Targets [TOON spec v1.4](https://github.com/toon-format/spec/blob/v1.4.0/SPEC.md). The test suite runs the spec's conformance fixtures, and [`test/known_failures.dart`](./test/known_failures.dart) lists the cases this port does not pass yet.
+Targets [TOON spec v4.4](https://github.com/toon-format/spec/blob/v4.4.0/SPEC.md), and the test suite runs the spec's conformance fixtures.
 
-- **Numbers decode to `double`** – a token that overflows `double` (e.g. `1e999`) stays a string, and integers beyond 2^53 lose precision ([§4](https://github.com/toon-format/spec/blob/v1.4.0/SPEC.md#4-decoding-interpretation-reference-decoder))
-- **Host values normalize to the JSON model** – `NaN` and infinities → `null`, `-0.0` → `0`, `BigInt` → number within ±(2^53 − 1) and a quoted decimal string beyond, `DateTime` → ISO 8601 string, `Set` → array, `Map` keys → `toString()`, anything else → `null` ([§3](https://github.com/toon-format/spec/blob/v1.4.0/SPEC.md#3-encoding-normalization-reference-encoder))
+- **Numbers decode to `double`** – integers beyond 2^53 lose precision and a token that overflows `double` (e.g. `1e999`) decodes as a string ([§4](https://github.com/toon-format/spec/blob/v4.4.0/SPEC.md#4-decoding-interpretation-reference-decoder))
+- **Host values normalize to the JSON model** – `NaN` and infinities → `null`, `-0.0` → `0`, integers (`int` or `BigInt`) beyond ±(2^53 − 1) → quoted decimal string, `DateTime` → ISO 8601 string, `Set` and any other `Iterable` → array, `Map` keys → `toString()`, anything else → `null`; a string or key with an unpaired surrogate throws an `ArgumentError` ([§3](https://github.com/toon-format/spec/blob/v4.4.0/SPEC.md#3-encoding-normalization-reference-encoder))
 
 ## Resources
 

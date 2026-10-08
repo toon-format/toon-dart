@@ -1,66 +1,37 @@
-import '../options.dart';
 import '../types.dart';
 import '../utilities/constants.dart';
-import 'scanners.dart';
+import '../utilities/string_utils.dart';
 
 void assertExpectedCount(
   int actual,
   int expected,
   String itemType,
-  DecodeOptions options,
+  ParsedLine line,
 ) {
-  if (options.strict && actual != expected) {
-    throw RangeError('Expected $expected $itemType, but got $actual');
-  }
-}
-
-void validateNoExtraListItems(
-  LineCursor cursor,
-  int itemDepth,
-  int expectedCount,
-) {
-  if (cursor.atEnd()) return;
-
-  final nextLine = cursor.peek();
-  if (nextLine != null && nextLine.depth == itemDepth && nextLine.content.startsWith(listItemPrefix)) {
-    throw RangeError('Expected $expectedCount list array items, but found more');
-  }
-}
-
-void validateNoExtraTabularRows(
-  LineCursor cursor,
-  int rowDepth,
-  ArrayHeaderInfo header,
-) {
-  if (cursor.atEnd()) return;
-
-  final nextLine = cursor.peek();
-  if (nextLine != null &&
-      nextLine.depth == rowDepth &&
-      !nextLine.content.startsWith(listItemPrefix) &&
-      isDataRow(nextLine.content, header.delimiter)) {
-    throw RangeError('Expected ${header.length} tabular rows, but found more');
+  if (actual != expected) {
+    throw FormatException(
+      expected < 0
+          ? 'Line ${line.lineNumber}: Array length out of range'
+          : 'Line ${line.lineNumber}: Expected $expected $itemType, but got $actual',
+    );
   }
 }
 
 void validateNoBlankLinesInRange(
-  int startLine,
-  int endLine,
-  List<BlankLineInfo> blankLines,
-  bool strict,
+  int? startLine,
+  int? endLine,
+  List<int> blankLines,
   String context,
 ) {
-  if (!strict) return;
-
+  if (startLine == null || endLine == null) return;
   // Any blank line between the first and last item fails, whatever its
   // indentation.
-  final blanksInRange = blankLines.where(
-    (blank) => blank.lineNumber > startLine && blank.lineNumber < endLine,
-  ).toList();
-
-  if (blanksInRange.isNotEmpty) {
+  final blank = blankLines
+      .where((line) => line > startLine && line < endLine)
+      .firstOrNull;
+  if (blank != null) {
     throw FormatException(
-      'Line ${blanksInRange[0].lineNumber}: Blank lines inside $context are not allowed in strict mode',
+      'Line $blank: Blank lines inside $context are not allowed in strict mode',
     );
   }
 }
@@ -68,16 +39,7 @@ void validateNoBlankLinesInRange(
 /// Tells a tabular row from a key-value line: a row has no colon, or a
 /// delimiter before its first colon.
 bool isDataRow(String content, String delimiter) {
-  final colonPos = content.indexOf(colon);
-  final delimiterPos = content.indexOf(delimiter);
-
-  if (colonPos == -1) {
-    return true;
-  }
-
-  if (delimiterPos != -1 && delimiterPos < colonPos) {
-    return true;
-  }
-
-  return false;
+  final colonPos = findUnquotedChar(content, colon);
+  final delimiterPos = findUnquotedChar(content, delimiter);
+  return colonPos == -1 || (delimiterPos != -1 && delimiterPos < colonPos);
 }

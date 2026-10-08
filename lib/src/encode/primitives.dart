@@ -1,89 +1,60 @@
 import '../types.dart';
 import '../utilities/constants.dart';
-import '../utilities/string-utils.dart';
+import '../utilities/string_utils.dart';
 import '../utilities/validation.dart';
 
-// #region Primitive encoding
-
-String encodePrimitive(JsonPrimitive value, [String? delimiter]) {
-  if (value == null) {
-    return nullLiteral;
-  }
-
-  if (value is bool) {
-    return value.toString();
-  }
-
-  if (value is double && value == value.truncateToDouble()) {
-    return value.toStringAsFixed(0);
-  }
-  if (value is num) {
-    return value.toString();
-  }
-
-  return encodeStringLiteral(value as String, delimiter ?? comma);
+String encodePrimitive(JsonPrimitive value, String delimiter) {
+  return switch (value) {
+    String() => encodeStringLiteral(value, delimiter),
+    num() => _encodeNumber(value),
+    _ => '$value', // null, true, or false
+  };
 }
 
-String encodeStringLiteral(String value, [String delimiter = comma]) {
-  if (isSafeUnquoted(value, delimiter)) {
-    return value;
-  }
+String _encodeNumber(num value) {
+  // Dart prints the shortest round-trip digits, with a `.0` suffix on
+  // integral doubles.
+  final text = '$value';
+  return text.endsWith('.0') ? text.substring(0, text.length - 2) : text;
+}
 
+String encodeStringLiteral(String value, String delimiter) {
+  return isSafeUnquoted(value, delimiter) ? value : quoteString(value);
+}
+
+String encodeKey(String key) {
+  return isValidUnquotedKey(key) ? key : quoteString(key);
+}
+
+String quoteString(String value) {
   return '$doubleQuote${escapeString(value)}$doubleQuote';
 }
 
-// #endregion
-
-// #region Key encoding
-
-String encodeKey(String key) {
-  if (isValidUnquotedKey(key)) {
-    return key;
-  }
-
-  return '$doubleQuote${escapeString(key)}$doubleQuote';
-}
-
-// #endregion
-
-// #region Value joining
-
-String encodeAndJoinPrimitives(List<JsonPrimitive> values,
-    [String delimiter = comma]) {
+String encodeAndJoinPrimitives(List<JsonPrimitive> values, String delimiter) {
   return values.map((v) => encodePrimitive(v, delimiter)).join(delimiter);
 }
-
-// #endregion
-
-// #region Header formatters
 
 String formatHeader(
   int length, {
   String? key,
-  List<String>? fields,
-  String? delimiter,
+  List<FieldNode>? fields,
+  required String delimiter,
+  bool keyed = false,
 }) {
-  final delimiterValue = delimiter ?? comma;
-
-  String header = '';
-
-  if (key != null) {
-    header += encodeKey(key);
-  }
-
-  final delimiterSuffix =
-      delimiterValue != defaultDelimiter ? delimiterValue : '';
-  header += '[$length$delimiterSuffix]';
-
-  if (fields != null) {
-    final quotedFields = fields.map((f) => encodeKey(f)).toList();
-    final joinedFields = quotedFields.join(delimiterValue);
-    header += '{$joinedFields}';
-  }
-
-  header += ':';
-
-  return header;
+  final encodedKey = key == null ? '' : encodeKey(key);
+  final keyedMarker = keyed ? colon : '';
+  final delimiterSuffix = delimiter == defaultDelimiter ? '' : delimiter;
+  final fieldGroup = fields == null ? '' : _formatFieldGroup(fields, delimiter);
+  return '$encodedKey[$length$keyedMarker$delimiterSuffix]$fieldGroup:';
 }
 
-// #endregion
+String _formatFieldGroup(List<FieldNode> fields, String delimiter) {
+  final entries = [
+    for (final field in fields)
+      if (field.children case final children?)
+        '${encodeKey(field.name)}${_formatFieldGroup(children, delimiter)}'
+      else
+        encodeKey(field.name),
+  ];
+  return '{${entries.join(delimiter)}}';
+}

@@ -4,16 +4,15 @@ import 'dart:io';
 import 'package:test/test.dart';
 import 'package:toon_format/toon_format.dart';
 
-import 'known_failures.dart';
-
 void main() {
   for (final category in const ['encode', 'decode']) {
-    final files = Directory('test/spec/tests/fixtures/$category')
-        .listSync()
-        .whereType<File>()
-        .where((f) => f.path.endsWith('.json'))
-        .toList()
-      ..sort((a, b) => a.path.compareTo(b.path));
+    final files =
+        Directory('test/spec/tests/fixtures/$category')
+            .listSync()
+            .whereType<File>()
+            .where((f) => f.path.endsWith('.json'))
+            .toList()
+          ..sort((a, b) => a.path.compareTo(b.path));
     final run = category == 'encode' ? _runEncode : _runDecode;
 
     group(category, () {
@@ -26,16 +25,7 @@ void main() {
         group(fileName, () {
           for (var i = 0; i < cases.length; i++) {
             final fixtureCase = cases[i];
-            final id = '$category/$fileName#$i';
-            test('#$i ${fixtureCase['name']}', () {
-              if (!knownFailures.contains(id)) return run(fixtureCase);
-              try {
-                run(fixtureCase);
-              } catch (_) {
-                return;
-              }
-              fail('$id passes now – remove it from known_failures.dart');
-            });
+            test('#$i ${fixtureCase['name']}', () => run(fixtureCase));
           }
         });
       }
@@ -44,52 +34,61 @@ void main() {
 }
 
 void _runEncode(Map<String, dynamic> fixtureCase) {
-  final options =
-      _encodeOptions(fixtureCase['options'] as Map<String, dynamic>?);
+  final options = _encodeOptions(
+    fixtureCase['options'] as Map<String, dynamic>?,
+  );
   if (fixtureCase['shouldError'] == true) {
-    expect(() => encode(fixtureCase['input'], options: options),
-        throwsA(anything));
+    expect(
+      () => encode(fixtureCase['input'], options: options),
+      throwsArgumentError,
+    );
     return;
   }
-  expect(encode(fixtureCase['input'], options: options),
-      equals(fixtureCase['expected']));
+  expect(
+    encode(fixtureCase['input'], options: options),
+    equals(fixtureCase['expected']),
+  );
 }
 
 void _runDecode(Map<String, dynamic> fixtureCase) {
-  final options =
-      _decodeOptions(fixtureCase['options'] as Map<String, dynamic>?);
+  final options = _decodeOptions(
+    fixtureCase['options'] as Map<String, dynamic>?,
+  );
   final input = fixtureCase['input'] as String;
   if (fixtureCase['shouldError'] == true) {
-    expect(() => decode(input, options: options), throwsA(anything));
+    expect(() => decode(input, options: options), throwsFormatException);
     return;
   }
   final actual = decode(input, options: options);
   expect(
     _jsonModelEquals(actual, fixtureCase['expected']),
     isTrue,
-    reason: 'expected ${jsonEncode(fixtureCase['expected'])}\n'
-        '     got ${_safeJson(actual)}',
+    reason:
+        'expected ${jsonEncode(fixtureCase['expected'])}\n'
+        '     got ${jsonEncode(actual)}',
   );
 }
 
 EncodeOptions? _encodeOptions(Map<String, dynamic>? fixtureOptions) {
   if (fixtureOptions == null) return null;
   return EncodeOptions(
-    indent: (fixtureOptions['indentSize'] ?? 2) as int,
-    delimiter: (fixtureOptions['delimiter'] ?? ',') as String,
+    indentSize: (fixtureOptions['indentSize'] ?? 2) as int,
+    delimiter: Delimiter.values.firstWhere(
+      (d) => d.symbol == (fixtureOptions['delimiter'] ?? ','),
+    ),
   );
 }
 
 DecodeOptions? _decodeOptions(Map<String, dynamic>? fixtureOptions) {
   if (fixtureOptions == null) return null;
   return DecodeOptions(
-    indent: (fixtureOptions['indentSize'] ?? 2) as int,
+    indentSize: (fixtureOptions['indentSize'] ?? 2) as int,
     strict: (fixtureOptions['strict'] ?? true) as bool,
   );
 }
 
-/// JSON-model equality per spec §2: ordered keys, exact strings,
-/// mathematical number equality.
+/// JSON-model equality: ordered keys, exact strings, and numbers compared by
+/// value, so the decoded `1.0` matches the expected `1`.
 bool _jsonModelEquals(Object? a, Object? b) {
   if (a is num && b is num) return a == b;
   if (a is String || b is String) return a == b;
@@ -112,12 +111,4 @@ bool _jsonModelEquals(Object? a, Object? b) {
     return true;
   }
   return false;
-}
-
-String _safeJson(Object? value) {
-  try {
-    return jsonEncode(value);
-  } catch (_) {
-    return '$value';
-  }
 }

@@ -1,26 +1,34 @@
-class EncodeOptions {
-  /// Spaces per indentation level.
-  final int indent;
+/// Delimiter for inline arrays and tabular rows.
+enum Delimiter {
+  comma(','),
+  tab('\t'),
+  pipe('|');
 
-  /// Delimiter for inline arrays and tabular rows: `','`, `'\t'`, or `'|'`.
-  final String delimiter;
+  const Delimiter(this.symbol);
 
-  const EncodeOptions({
-    this.indent = 2,
-    this.delimiter = ',',
-  }) : assert(indent > 0, 'indent must be positive');
+  final String symbol;
 }
 
+/// Options for `encode`.
+class EncodeOptions {
+  /// Spaces per indentation level.
+  final int indentSize;
+
+  /// Delimiter for inline arrays and tabular rows.
+  final Delimiter delimiter;
+
+  const EncodeOptions({this.indentSize = 2, this.delimiter = Delimiter.comma});
+}
+
+/// Options for `decode`.
 class DecodeOptions {
   /// Expected spaces per indentation level.
-  final int indent;
+  final int indentSize;
 
-  /// Whether to throw on length mismatches, blank lines inside arrays, and
-  /// tabs or uneven indentation.
+  /// Whether to throw on count mismatches, duplicate keys, tab or uneven
+  /// indentation, blank lines inside an array or keyed tabular object, and
+  /// depth jumps. Any other malformed input throws in both modes.
   final bool strict;
 
-  const DecodeOptions({
-    this.indent = 2,
-    this.strict = true,
-  }) : assert(indent > 0, 'indent must be positive');
+  const DecodeOptions({this.indentSize = 2, this.strict = true});
 }
