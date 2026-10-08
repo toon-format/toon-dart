@@ -26,8 +26,8 @@ class DecodeOptions {
   final int indentSize;
 
   /// Whether to throw on count mismatches, duplicate keys, tab or uneven
-  /// indentation, blank lines inside arrays, and depth jumps. Any other
-  /// malformed input throws in both modes.
+  /// indentation, blank lines inside an array or keyed tabular object, and
+  /// depth jumps. Any other malformed input throws in both modes.
   final bool strict;
 
   const DecodeOptions({this.indentSize = 2, this.strict = true});
