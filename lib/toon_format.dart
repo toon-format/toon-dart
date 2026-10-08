@@ -1,5 +1,4 @@
-/// Encodes and decodes TOON (Token-Oriented Object Notation) per
-/// [TOON spec v4.4](https://github.com/toon-format/spec/blob/v4.4.0/SPEC.md).
+/// TOON encoder and decoder, see https://github.com/toon-format/spec/blob/main/SPEC.md
 library;
 
 export 'src/options.dart';
