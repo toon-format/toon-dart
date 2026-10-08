@@ -1,3 +1,7 @@
+## 1.0.0
+
+- First stable release, with the code of 0.2.0; the README now states the versioning policy
+
 ## 0.2.0
 
 - Target [TOON spec v4.4](https://github.com/toon-format/spec/blob/v4.4.0/SPEC.md): keyed tabular objects, nested field groups, comment lines, `\uXXXX` escapes, the `[]` empty-array literal, and the stricter quoting and header rules; every conformance fixture passes
