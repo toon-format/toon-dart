@@ -1,4 +1,4 @@
-## Unreleased
+## 0.2.0
 
 - Target [TOON spec v4.4](https://github.com/toon-format/spec/blob/v4.4.0/SPEC.md): keyed tabular objects, nested field groups, comment lines, `\uXXXX` escapes, the `[]` empty-array literal, and the stricter quoting and header rules; every conformance fixture passes
 - **Breaking:** `EncodeOptions.indent` and `DecodeOptions.indent` are now `indentSize`
